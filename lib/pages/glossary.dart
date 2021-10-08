@@ -189,6 +189,7 @@ class _DialogStartButtonState extends State<DialogStartButton> {
         //     ),
         //   ],
         // ),
+
         ElevatedButton(
           onPressed: () {
             if (controller.currentGlossaryDocuments.isEmpty) {
@@ -203,8 +204,26 @@ class _DialogStartButtonState extends State<DialogStartButton> {
               controller,
             );
           },
-          child: const Text('Exam'),
+          child: const Text('Open Question Exam'),
         ),
+
+        ElevatedButton(
+          onPressed: () {
+            if (controller.currentGlossaryDocuments.isEmpty) {
+              Fluttertoast.showToast(
+                  msg:
+                      'There is not terms in the current glossary or with the applied filters');
+              return;
+            }
+            navigateToExam(
+              'multipleOption',
+              context,
+              controller,
+            );
+          },
+          child: const Text('Multiple Option Exam'),
+        ),
+
         ElevatedButton(
             onPressed: () {
               if (controller.currentGlossaryDocuments.isEmpty) {

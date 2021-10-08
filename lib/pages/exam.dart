@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:math';
 
 import 'package:elephant/services/controller.dart';
@@ -54,6 +55,10 @@ class _ExamPageState extends State<ExamPage> {
                   page: index,
                   length: termsList.length,
                 );
+                break;
+              case 'multipleOption':
+                page = ExamCardMultipleOption(
+                    term: termsList[index], indexPageController: index);
                 break;
               default:
                 page = ExamCard(
@@ -246,15 +251,13 @@ class _ExamCardState extends State<ExamCard> {
                   } else {
                     controller.wrongTerms.add(widget.term);
                   }
-                  if (checkIfLastPage(controller)) {
-                    controller.pageControllerExam.nextPage(
-                        duration: const Duration(seconds: 1),
-                        curve: const ElasticInCurve());
-                  } else {
-                    Navigator.of(context).pushReplacementNamed('/examResults');
-                  }
+
+                  navigationInExam(
+                      context: context,
+                      controller: controller,
+                      index: widget.index);
                 },
-                child: checkIfLastPage(controller)
+                child: checkIfLastPage(controller, widget.index)
                     ? const Text('Next question')
                     : const Text('Finish exam')),
             const SizedBox(
@@ -265,66 +268,124 @@ class _ExamCardState extends State<ExamCard> {
       ),
     );
   }
+}
 
-  bool checkIfLastPage(Controller controller) {
-    bool lastPage = false;
-    if (widget.index != controller.currentTermList.length - 1) {
-      lastPage = true;
-    }
-    return lastPage;
+bool checkIfLastPage(Controller controller, int index) {
+  bool lastPage = false;
+  if (index != controller.currentTermList.length - 1) {
+    lastPage = true;
+  }
+  return lastPage;
+}
+
+void navigationInExam(
+    {required BuildContext context,
+    required Controller controller,
+    required int index}) {
+  if (checkIfLastPage(controller, index)) {
+    controller.pageControllerExam.nextPage(
+        duration: const Duration(seconds: 1), curve: const ElasticInCurve());
+  } else {
+    Navigator.of(context).pushReplacementNamed('/examResults');
   }
 }
 
 //this cards have a complicated logic it has many ifs in order to choose if we will use the term or the answer
 // as the anchor part to the card, so we have 3 variables to check if the exam will be mixed, or if it will normal,
 // or based on answers, the same logic needs to be implemented for the flashcards and the open exams
-class ExamCardMultipleOption extends StatelessWidget {
+class ExamCardMultipleOption extends StatefulWidget {
   final TermModel term;
-  const ExamCardMultipleOption({Key? key, required this.term})
+  final int indexPageController;
+
+  const ExamCardMultipleOption(
+      {Key? key, required this.term, required this.indexPageController})
       : super(key: key);
 
   @override
+  State<ExamCardMultipleOption> createState() => _ExamCardMultipleOptionState();
+}
+
+class _ExamCardMultipleOptionState extends State<ExamCardMultipleOption> {
+  bool tileEnabled = true;
+  Color tileColor = primary;
+  @override
   Widget build(BuildContext context) {
+    final textStyleTerm = Theme.of(context).textTheme.headline2;
     Controller controller = Provider.of(context);
     String answer = '';
     bool useTerms = true;
     if (controller.testFromAnswers) {
       useTerms = false;
-      answer = term.term;
+      answer = widget.term.term;
     } else if (controller.testFromTerms) {
-      answer = term.answer;
+      answer = widget.term.answer;
     } else if (controller.mixTermsAnswers) {
       int i = Random().nextInt(1);
       if (i % 2 == 0) {
         useTerms = true;
-        answer = term.answer;
+        answer = widget.term.answer;
       } else {
         useTerms = false;
-        answer = term.term;
+        answer = widget.term.term;
       }
     }
 
     List<String> options = multipleOptionMaker(controller, answer, useTerms);
     // TODO: implement build
     return Padding(
-      padding: EdgeInsets.all(10),
+      padding: const EdgeInsets.all(10),
       child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Text(term.term),
-          ListView.builder(itemBuilder: (context, index) {
-            return ListTile(
-              onTap: () {
-                if (answer == options[index]) {
-                  print(true);
-                }
-              },
-              title: Text(options[index]),
-            );
-          })
+          Text(
+            textToDisplay(widget.term, useTerms),
+            style: textStyleTerm,
+          ),
+          const SizedBox(
+            height: 15,
+          ),
+          const Text('Select the right option'),
+          const SizedBox(
+            height: 5,
+          ),
+          ListView.builder(
+              padding: const EdgeInsets.all(15),
+              shrinkWrap: true,
+              itemCount: options.length,
+              itemBuilder: (context, index) {
+                return ListTile(
+                  enabled: tileEnabled,
+                  tileColor: tileColor,
+                  onTap: () {
+                    tileEnabled = false;
+                    if (answer == options[index]) {
+                      controller.rightTerms.add(widget.term);
+                      tileColor = Colors.green;
+                    } else {
+                      controller.wrongTerms.add(widget.term);
+                      tileColor = Colors.red;
+                    }
+                    setState(() {});
+                    Timer(const Duration(seconds: 3), () {
+                      navigationInExam(
+                          context: context,
+                          controller: controller,
+                          index: widget.indexPageController);
+                    });
+                  },
+                  title: Text(options[index]),
+                );
+              })
         ],
       ),
     );
   }
+}
+
+String textToDisplay(TermModel term, bool useTerms) {
+  String text = useTerms ? term.term : term.answer;
+
+  return text;
 }
 
 List<String> multipleOptionMaker(

@@ -57,7 +57,7 @@ class ExamResultPage extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.center,
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  const Icon(Icons.check_circle_outlined),
+                  const Icon(Icons.cancel_outlined),
                   const SizedBox(
                     width: 10,
                   ),
@@ -190,7 +190,7 @@ class ExamResultPage extends StatelessWidget {
       phrase = 'Amazing';
     }
     if (totalPercentage > 96) {
-      phrase = 'Amazing';
+      phrase = 'Perfect';
     }
     return phrase;
   }
