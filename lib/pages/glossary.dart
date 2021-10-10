@@ -12,12 +12,19 @@ enum Type { verb, adverd, noun, phrase }
 
 // ignore: must_be_immutable
 class GlossaryPage extends StatelessWidget {
-  GlossaryPage({
+  const GlossaryPage({
     Key? key,
   }) : super(key: key);
 
+  navigateToDifficultTerms(BuildContext context, Controller controller) {
+    controller.generateCurrentTermsList();
+    controller.generateDifficultTermList();
+    Navigator.of(context).pushNamed('/difficultTermsPage');
+  }
+
   @override
   Widget build(BuildContext context) {
+    final textStyleHeadline = Theme.of(context).textTheme.headline5;
     Controller controller = Provider.of<Controller>(context);
     final Stream<QuerySnapshot> _termStream = controller
         .currentGlossary.documentReference
@@ -26,113 +33,150 @@ class GlossaryPage extends StatelessWidget {
         .snapshots();
 
     return Scaffold(
-      floatingActionButton: FloatingActionButton.extended(
-        onPressed: () {
-          showDialog(
-            context: context,
-            builder: (context) => DialogAddNewTerm(
-              glossaryModel: controller.currentGlossary,
-              term: TermModel('', '', Type.values.first.toString(), 'untagged'),
-              emptyTerm: true,
+      floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
+      floatingActionButton: Padding(
+        padding: const EdgeInsets.all(8.0),
+        child: Stack(
+          fit: StackFit.loose,
+          children: <Widget>[
+            Align(
+              alignment: Alignment.bottomLeft,
+              child: FloatingActionButton(
+                onPressed: () {
+                  navigateToDifficultTerms(context, controller);
+                },
+                child: const Icon(Icons.healing_rounded),
+              ),
             ),
-          );
-        },
-        label: const Text('Add new term'),
-        icon: const Icon(Icons.add_circle_outline),
+            Align(
+              alignment: Alignment.bottomRight,
+              child: FloatingActionButton.extended(
+                onPressed: () {
+                  showDialog(
+                    context: context,
+                    builder: (context) => DialogAddNewTerm(
+                      glossaryModel: controller.currentGlossary,
+                      term: TermModel(
+                          '', '', Type.values.first.toString(), 'untagged'),
+                      emptyTerm: true,
+                    ),
+                  );
+                },
+                label: const Text('New term'),
+                icon: const Icon(Icons.add_circle_outline),
+              ),
+            ),
+          ],
+        ),
       ),
       appBar: myAppBar(
           title: controller.currentGlossary.name,
           context: context,
           type: 'glossary'),
-      body: StreamBuilder<QuerySnapshot>(
-        stream: controller.queryStreamCreator(),
-        builder: (context, snapshot) {
-          //TODO: display error
-          if (snapshot.hasError) {
-            return Container();
-          }
-          //TODO: display error
-          if (!snapshot.hasData) {
-            return Container(
-              child: const CircularProgressIndicator(),
-            );
-          }
-          print('Query succed');
-          controller.currentGlossaryDocuments = snapshot.data!.docs;
-          if (controller.currentGlossaryDocuments.isEmpty) {
-            return Center(
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: const [
-                  Text(
-                    'This glossary does not contain any terms, would you like to add some to it? Click the add button down below',
-                    textAlign: TextAlign.center,
-                  ),
-                ],
-              ),
-            );
-          }
-          print(controller.currentGlossaryDocuments.length);
-          return ListView.builder(
-            shrinkWrap: true,
-            itemCount: controller.currentGlossaryDocuments.length,
-            itemBuilder: (context, index) {
-              TermModel term = TermModel.fromDocumentSnapshot(
-                  controller.currentGlossaryDocuments[index]);
-              return ListTile(
-                trailing: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    IconButton(
-                        onPressed: () {
-                          showDialog(
-                              context: context,
-                              builder: (context) {
-                                return DialogAddNewTerm(
-                                  glossaryModel: controller.currentGlossary,
-                                  term: term,
-                                  emptyTerm: false,
-                                );
-                              });
-                        },
-                        icon: const Icon(Icons.edit_outlined)),
-                    IconButton(
-                        onPressed: () {
-                          showDialog(
-                              context: context,
-                              builder: (context) {
-                                return AlertDialog(
-                                  title: const Text(
-                                      'Are you sure you want to delete this term?'),
-                                  actions: [
-                                    ElevatedButton(
-                                        onPressed: () {
-                                          Navigator.of(context).pop();
-                                        },
-                                        child: const Text('Cancel')),
-                                    ElevatedButton(
-                                        onPressed: () async {
-                                          await controller
-                                              .currentGlossaryDocuments[index]
-                                              .reference
-                                              .delete();
-                                          Navigator.of(context).pop();
-                                        },
-                                        child: const Text('Delete'))
-                                  ],
-                                );
-                              });
-                        },
-                        icon: const Icon(Icons.delete_forever_rounded))
-                  ],
-                ),
-                leading: Icon(controller.termIconAsignner(term.type)),
-                title: Text(term.term),
-                subtitle: Text(term.answer),
-              );
-            },
-          );
-        },
+      body: Padding(
+        padding: const EdgeInsets.all(10.0),
+        child: Column(
+          mainAxisSize: MainAxisSize.max,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'Terms',
+              style: textStyleHeadline,
+            ),
+            StreamBuilder<QuerySnapshot>(
+              stream: controller.queryStreamCreator(),
+              builder: (context, snapshot) {
+                //TODO: display error
+                if (snapshot.hasError) {
+                  return Container();
+                }
+                //TODO: display error
+                if (!snapshot.hasData) {
+                  return Container(
+                    child: const CircularProgressIndicator(),
+                  );
+                }
+
+                controller.currentGlossaryDocuments = snapshot.data!.docs;
+                if (controller.currentGlossaryDocuments.isEmpty) {
+                  return Center(
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: const [
+                        Text(
+                          'This glossary does not contain any terms, would you like to add some to it? Click the add button down below',
+                          textAlign: TextAlign.center,
+                        ),
+                      ],
+                    ),
+                  );
+                }
+
+                return ListView.builder(
+                  shrinkWrap: true,
+                  itemCount: controller.currentGlossaryDocuments.length,
+                  itemBuilder: (context, index) {
+                    TermModel term = TermModel.fromDocumentSnapshot(
+                        controller.currentGlossaryDocuments[index]);
+                    return ListTile(
+                      trailing: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          IconButton(
+                              onPressed: () {
+                                showDialog(
+                                    context: context,
+                                    builder: (context) {
+                                      return DialogAddNewTerm(
+                                        glossaryModel:
+                                            controller.currentGlossary,
+                                        term: term,
+                                        emptyTerm: false,
+                                      );
+                                    });
+                              },
+                              icon: const Icon(Icons.edit_outlined)),
+                          IconButton(
+                              onPressed: () {
+                                showDialog(
+                                    context: context,
+                                    builder: (context) {
+                                      return AlertDialog(
+                                        title: const Text(
+                                            'Are you sure you want to delete this term?'),
+                                        actions: [
+                                          ElevatedButton(
+                                              onPressed: () {
+                                                Navigator.of(context).pop();
+                                              },
+                                              child: const Text('Cancel')),
+                                          ElevatedButton(
+                                              onPressed: () async {
+                                                await controller
+                                                    .currentGlossaryDocuments[
+                                                        index]
+                                                    .reference
+                                                    .delete();
+                                                Navigator.of(context).pop();
+                                              },
+                                              child: const Text('Delete'))
+                                        ],
+                                      );
+                                    });
+                              },
+                              icon: const Icon(Icons.delete_forever_rounded))
+                        ],
+                      ),
+                      leading: Icon(controller.termIconAsignner(term.type)),
+                      title: Text(term.term),
+                      subtitle: Text(term.answer),
+                    );
+                  },
+                );
+              },
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -149,82 +193,103 @@ class _DialogStartButtonState extends State<DialogStartButton> {
   @override
   Widget build(BuildContext context) {
     Controller controller = Provider.of<Controller>(context);
-    return SimpleDialog(
-      titlePadding: const EdgeInsets.all(10.0),
-      title: const Text('Select an option'),
-      contentPadding: const EdgeInsets.all(30),
-      children: [
-        controller.selectedTags.isEmpty
-            ? Container()
-            : const Text(
-                'Exam and flash cards will start with the currently applied filters, click the button to clear the tags and use all the terms'),
-        controller.selectedTags.isEmpty
-            ? Container()
-            : ElevatedButton(
-                onPressed: () {
-                  controller.selectedTags.clear();
-                  controller.notifyNoob();
-                },
-                child: const Text('Clear tags')),
+    final textStyleTheme = Theme.of(context).textTheme.headline6;
+    return Dialog(
+        child: Padding(
+      padding: const EdgeInsets.all(30.0),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Text(
+            'Select an option',
+            style: textStyleTheme,
+          ),
+          const SizedBox(height: 30),
+          controller.selectedTags.isEmpty
+              ? Container()
+              : const Text(
+                  'Exam and flash cards will start with the currently applied filters, click the button to clear the tags and use all the terms'),
+          controller.selectedTags.isEmpty
+              ? Container()
+              : ElevatedButton(
+                  onPressed: () {
+                    controller.selectedTags.clear();
+                    controller.notifyNoob();
+                  },
+                  child: const Text('Clear tags')),
+          const SizedBox(
+            height: 25,
+          ),
 
-        //old switch selector
-        // Row(
-        //   mainAxisAlignment: MainAxisAlignment.center,
-        //   children: [
-        //     Text(
-        //       'No',
-        //       style: TextStyle(
-        //           color: controller.useFilteredTerms ? pLight : Colors.black),
-        //     ),
-        //     Switch(
-        //         value: controller.useFilteredTerms,
-        //         onChanged: (onChanged) {
-        //           controller.useFilteredTerms = onChanged;
-        //           setState(() {});
-        //         }),
-        //     Text(
-        //       'Yes',
-        //       style: TextStyle(
-        //           color: controller.useFilteredTerms ? Colors.black : pLight),
-        //     ),
-        //   ],
-        // ),
+          //old switch selector
+          // Row(
+          //   mainAxisAlignment: MainAxisAlignment.center,
+          //   children: [
+          //     Text(
+          //       'No',
+          //       style: TextStyle(
+          //           color: controller.useFilteredTerms ? pLight : Colors.black),
+          //     ),
+          //     Switch(
+          //         value: controller.useFilteredTerms,
+          //         onChanged: (onChanged) {
+          //           controller.useFilteredTerms = onChanged;
+          //           setState(() {});
+          //         }),
+          //     Text(
+          //       'Yes',
+          //       style: TextStyle(
+          //           color: controller.useFilteredTerms ? Colors.black : pLight),
+          //     ),
+          //   ],
+          // ),
 
-        ElevatedButton(
-          onPressed: () {
-            if (controller.currentGlossaryDocuments.isEmpty) {
-              Fluttertoast.showToast(
-                  msg:
-                      'There is not terms in the current glossary or with the applied filters');
-              return;
-            }
-            navigateToExam(
-              'exam',
-              context,
-              controller,
-            );
-          },
-          child: const Text('Open Question Exam'),
-        ),
+          const Text('Select the question and answer configuration'),
+          // Row(
+          //   crossAxisAlignment: CrossAxisAlignment.stretch,
+          //   mainAxisSize: MainAxisSize.min,
+          //   mainAxisAlignment: MainAxisAlignment.center,
+          //   children: [
+          RadioListTile<ExamType>(
+            title: const Text('Use Terms'),
+            value: ExamType.useTerms,
+            groupValue: controller.examType,
+            onChanged: (ExamType? value) {
+              setState(() {
+                controller.examType = value!;
+              });
+            },
+          ),
 
-        ElevatedButton(
-          onPressed: () {
-            if (controller.currentGlossaryDocuments.isEmpty) {
-              Fluttertoast.showToast(
-                  msg:
-                      'There is not terms in the current glossary or with the applied filters');
-              return;
-            }
-            navigateToExam(
-              'multipleOption',
-              context,
-              controller,
-            );
-          },
-          child: const Text('Multiple Option Exam'),
-        ),
+          RadioListTile<ExamType>(
+            title: const Text('Use Answers'),
+            value: ExamType.useAnswers,
+            groupValue: controller.examType,
+            onChanged: (ExamType? value) {
+              setState(() {
+                controller.examType = value!;
+              });
+            },
+          ),
 
-        ElevatedButton(
+          RadioListTile<ExamType>(
+            title: const Text('Mixed'),
+            value: ExamType.mixed,
+            groupValue: controller.examType,
+            onChanged: (ExamType? value) {
+              setState(() {
+                controller.examType = value!;
+              });
+            },
+          ),
+          //   ],
+          // ),
+
+          const SizedBox(
+            height: 20,
+          ),
+          ElevatedButton(
             onPressed: () {
               if (controller.currentGlossaryDocuments.isEmpty) {
                 Fluttertoast.showToast(
@@ -233,14 +298,49 @@ class _DialogStartButtonState extends State<DialogStartButton> {
                 return;
               }
               navigateToExam(
-                'flashCards',
+                'exam',
                 context,
                 controller,
               );
             },
-            child: const Text('Flash Cards'))
-      ],
-    );
+            child: const Text('Open Question Exam'),
+          ),
+
+          ElevatedButton(
+            onPressed: () {
+              if (controller.currentGlossaryDocuments.isEmpty) {
+                Fluttertoast.showToast(
+                    msg:
+                        'There is not terms in the current glossary or with the applied filters');
+                return;
+              }
+              navigateToExam(
+                'multipleOption',
+                context,
+                controller,
+              );
+            },
+            child: const Text('Multiple Option Exam'),
+          ),
+
+          ElevatedButton(
+              onPressed: () {
+                if (controller.currentGlossaryDocuments.isEmpty) {
+                  Fluttertoast.showToast(
+                      msg:
+                          'There is not terms in the current glossary or with the applied filters');
+                  return;
+                }
+                navigateToExam(
+                  'flashCards',
+                  context,
+                  controller,
+                );
+              },
+              child: const Text('Flash Cards'))
+        ],
+      ),
+    ));
   }
 }
 
@@ -252,6 +352,7 @@ navigateToExam(
   Navigator.of(context).pop();
   controller.clearLists();
   controller.generateCurrentTermsList();
+
   Navigator.of(context).pushNamed(ExamPage.routeName,
       arguments: ExamArguments(
         examType: type,

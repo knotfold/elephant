@@ -28,6 +28,7 @@ class _ExamPageState extends State<ExamPage> {
     Controller controller = Provider.of<Controller>(context);
 
     List<TermModel> termsList = controller.currentTermList;
+
     // TODO: implement build
     return Scaffold(
       appBar: AppBar(
@@ -308,27 +309,48 @@ class ExamCardMultipleOption extends StatefulWidget {
 class _ExamCardMultipleOptionState extends State<ExamCardMultipleOption> {
   bool tileEnabled = true;
   Color tileColor = primary;
+  bool useTerms = true;
+
   @override
   Widget build(BuildContext context) {
     final textStyleTerm = Theme.of(context).textTheme.headline2;
     Controller controller = Provider.of(context);
     String answer = '';
-    bool useTerms = true;
-    if (controller.testFromAnswers) {
-      useTerms = false;
-      answer = widget.term.term;
-    } else if (controller.testFromTerms) {
-      answer = widget.term.answer;
-    } else if (controller.mixTermsAnswers) {
-      int i = Random().nextInt(1);
-      if (i % 2 == 0) {
-        useTerms = true;
+    switch (controller.examType) {
+      case ExamType.useTerms:
         answer = widget.term.answer;
-      } else {
+        break;
+      case ExamType.useAnswers:
         useTerms = false;
         answer = widget.term.term;
-      }
+        break;
+      case ExamType.mixed:
+        int i = Random().nextInt(2);
+        if (i % 2 == 0) {
+          useTerms = true;
+          answer = widget.term.answer;
+        } else {
+          useTerms = false;
+          answer = widget.term.term;
+        }
+        break;
     }
+
+    // if (controller.testFromAnswers) {
+    //   useTerms = false;
+    //   answer = widget.term.term;
+    // } else if (controller.testFromTerms) {
+    //   answer = widget.term.answer;
+    // } else if (controller.mixTermsAnswers) {
+    //   int i = Random().nextInt(1);
+    //   if (i % 2 == 0) {
+    //     useTerms = true;
+    //     answer = widget.term.answer;
+    //   } else {
+    //     useTerms = false;
+    //     answer = widget.term.term;
+    //   }
+    // }
 
     List<String> options = multipleOptionMaker(controller, answer, useTerms);
     // TODO: implement build
@@ -340,6 +362,7 @@ class _ExamCardMultipleOptionState extends State<ExamCardMultipleOption> {
           Text(
             textToDisplay(widget.term, useTerms),
             style: textStyleTerm,
+            textAlign: TextAlign.center,
           ),
           const SizedBox(
             height: 15,
@@ -366,7 +389,7 @@ class _ExamCardMultipleOptionState extends State<ExamCardMultipleOption> {
                       tileColor = Colors.red;
                     }
                     setState(() {});
-                    Timer(const Duration(seconds: 3), () {
+                    Timer(const Duration(seconds: 1), () {
                       navigationInExam(
                           context: context,
                           controller: controller,

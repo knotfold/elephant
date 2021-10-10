@@ -1,4 +1,4 @@
-import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:elephant/pages/difficult_terms.dart';
 import 'package:elephant/pages/exam.dart';
 import 'package:elephant/pages/exam_results.dart';
 import 'package:elephant/pages/pages.dart';
@@ -38,6 +38,7 @@ class MyApp extends StatelessWidget {
         ExamPage.routeName: (context) => const ExamPage(),
         '/examResults': (context) => ExamResultPage(),
         '/glossaryPage': (context) => GlossaryPage(),
+        '/difficultTermsPage': (context) => DifficultTermsPage()
       },
     );
   }

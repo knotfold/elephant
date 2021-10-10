@@ -31,6 +31,17 @@ AppBar myAppBar(
               },
               icon: const Icon(Icons.filter_list))
           : Container(),
+      type == 'Difficult Terms'
+          ? IconButton(
+              onPressed: () {
+                showDialog(
+                    context: context,
+                    builder: (context) {
+                      return const FilterListDialog();
+                    });
+              },
+              icon: const Icon(Icons.play_circle_outline_outlined))
+          : Container(),
       IconButton(
           onPressed: () {}, icon: const Icon(Icons.help_outline_rounded)),
     ],

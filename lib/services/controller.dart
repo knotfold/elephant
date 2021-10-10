@@ -6,6 +6,8 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
+enum ExamType { useTerms, useAnswers, mixed }
+
 class Controller with ChangeNotifier {
   UserModel user = UserModel(username: 'Kno');
   late GlossaryModel _currentGlossary;
@@ -17,6 +19,8 @@ class Controller with ChangeNotifier {
   bool testFromAnswers = false;
   bool testFromTerms = true;
 
+  ExamType examType = ExamType.useTerms;
+
   //lists
 
   late List<TermModel> currentTermList = [];
@@ -24,6 +28,7 @@ class Controller with ChangeNotifier {
   late List<TermModel> rightTerms = [];
   late List<dynamic> selectedTags = [];
   late List<QueryDocumentSnapshot> currentGlossaryDocuments;
+  late List<TermModel> difficultTermList = [];
 
   //streams
   late Stream<QuerySnapshot> queryStream;
@@ -86,11 +91,20 @@ class Controller with ChangeNotifier {
       currentTermList.add(TermModel.fromDocumentSnapshot(element));
     }
 
+    currentTermList.shuffle();
     return currentTermList;
   }
 
   notifyNoob() {
     notifyListeners();
+  }
+
+  generateDifficultTermList() {
+    for (var element in currentTermList) {
+      if (element.difficultTerm) {
+        difficultTermList.add(element);
+      }
+    }
   }
 
   clearLists() {

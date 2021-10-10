@@ -35,6 +35,7 @@ class TermModel {
   late String tag;
   late Type typeEnum;
   late DocumentReference reference;
+  late bool difficultTerm;
 
   TermModel(this.term, this.answer, this.type, this.tag);
 
@@ -46,6 +47,7 @@ class TermModel {
     tag = data['tag'] ?? 'untagged';
     typeEnum = Type.values.firstWhere((element) => element.toString() == type);
     reference = ds.reference;
+    difficultTerm = data['difficultTerm'] ?? false;
   }
 
   Map<String, dynamic> toMap() {
@@ -54,6 +56,7 @@ class TermModel {
       'answer': answer,
       'type': type,
       'tag': tag,
+      'difficultTerm': difficultTerm,
     };
   }
 }
