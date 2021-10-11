@@ -8,6 +8,7 @@ import 'package:provider/provider.dart';
 
 AppBar myAppBar(
     {String? title, required BuildContext context, required String type}) {
+  Controller controller = Provider.of<Controller>(context);
   return AppBar(
     title: Text(title ?? 'Elephant'),
     actions: [
@@ -37,7 +38,8 @@ AppBar myAppBar(
                 showDialog(
                     context: context,
                     builder: (context) {
-                      return const FilterListDialog();
+                      return navigateToExam(
+                          'difficultExam', context, controller);
                     });
               },
               icon: const Icon(Icons.play_circle_outline_outlined))
@@ -46,6 +48,17 @@ AppBar myAppBar(
           onPressed: () {}, icon: const Icon(Icons.help_outline_rounded)),
     ],
   );
+}
+
+navigateToExam(
+  String type,
+  BuildContext context,
+  Controller controller,
+) {
+  Navigator.of(context).pushNamed(ExamPage.routeName,
+      arguments: ExamArguments(
+        examType: type,
+      ));
 }
 
 class FilterListDialog extends StatefulWidget {

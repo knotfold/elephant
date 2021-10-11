@@ -100,6 +100,7 @@ class Controller with ChangeNotifier {
   }
 
   generateDifficultTermList() {
+    difficultTermList.clear();
     for (var element in currentTermList) {
       if (element.difficultTerm) {
         difficultTermList.add(element);

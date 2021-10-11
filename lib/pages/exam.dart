@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:math';
 
+import 'package:elephant/pages/exam_results.dart';
 import 'package:elephant/services/controller.dart';
 import 'package:flutter/material.dart';
 import 'package:elephant/shared/shared.dart';
@@ -44,6 +45,12 @@ class _ExamPageState extends State<ExamPage> {
           itemBuilder: (context, index) {
             Widget page;
             switch (args.examType) {
+              case 'difficultExam':
+                page = ExamCard(
+                  term: controller.difficultTermList[index],
+                  index: index,
+                );
+                break;
               case 'exam':
                 page = ExamCard(
                   term: termsList[index],
@@ -287,7 +294,8 @@ void navigationInExam(
     controller.pageControllerExam.nextPage(
         duration: const Duration(seconds: 1), curve: const ElasticInCurve());
   } else {
-    Navigator.of(context).pushReplacementNamed('/examResults');
+    Navigator.of(context).pushReplacementNamed(ExamResultPage.routeName,
+        arguments: ExamResultArguments(difficultTerms: false));
   }
 }
 
@@ -422,11 +430,19 @@ List<String> multipleOptionMaker(
   for (int index = 0; index < 3; index++) {
     int randomIndex = Random().nextInt(currentTermList.length);
     if (!terms) {
-      options.add(currentTermList[randomIndex].term);
+      if (!options.contains(currentTermList[randomIndex].term)) {
+        options.add(currentTermList[randomIndex].term);
+      } else {
+        index--;
+      }
     }
 
     if (terms) {
-      options.add(currentTermList[randomIndex].answer);
+      if (!options.contains(currentTermList[randomIndex].answer)) {
+        options.add(currentTermList[randomIndex].answer);
+      } else {
+        index--;
+      }
     }
 
     // if (controller.mixTermsAnswers) {

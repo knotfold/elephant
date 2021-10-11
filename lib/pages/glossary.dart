@@ -35,13 +35,14 @@ class GlossaryPage extends StatelessWidget {
     return Scaffold(
       floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
       floatingActionButton: Padding(
-        padding: const EdgeInsets.all(8.0),
+        padding: const EdgeInsets.all(15.0),
         child: Stack(
           fit: StackFit.loose,
           children: <Widget>[
             Align(
               alignment: Alignment.bottomLeft,
               child: FloatingActionButton(
+                heroTag: 'difficultTerms',
                 onPressed: () {
                   navigateToDifficultTerms(context, controller);
                 },
@@ -51,6 +52,7 @@ class GlossaryPage extends StatelessWidget {
             Align(
               alignment: Alignment.bottomRight,
               child: FloatingActionButton.extended(
+                heroTag: 'addNewTerms',
                 onPressed: () {
                   showDialog(
                     context: context,
@@ -306,22 +308,24 @@ class _DialogStartButtonState extends State<DialogStartButton> {
             child: const Text('Open Question Exam'),
           ),
 
-          ElevatedButton(
-            onPressed: () {
-              if (controller.currentGlossaryDocuments.isEmpty) {
-                Fluttertoast.showToast(
-                    msg:
-                        'There is not terms in the current glossary or with the applied filters');
-                return;
-              }
-              navigateToExam(
-                'multipleOption',
-                context,
-                controller,
-              );
-            },
-            child: const Text('Multiple Option Exam'),
-          ),
+          controller.currentGlossaryDocuments.length < 4
+              ? Container()
+              : ElevatedButton(
+                  onPressed: () {
+                    if (controller.currentGlossaryDocuments.isEmpty) {
+                      Fluttertoast.showToast(
+                          msg:
+                              'There is not terms in the current glossary or with the applied filters');
+                      return;
+                    }
+                    navigateToExam(
+                      'multipleOption',
+                      context,
+                      controller,
+                    );
+                  },
+                  child: const Text('Multiple Option Exam'),
+                ),
 
           ElevatedButton(
               onPressed: () {

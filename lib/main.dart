@@ -36,8 +36,8 @@ class MyApp extends StatelessWidget {
       home: const Home(),
       routes: {
         ExamPage.routeName: (context) => const ExamPage(),
-        '/examResults': (context) => ExamResultPage(),
-        '/glossaryPage': (context) => GlossaryPage(),
+        ExamResultPage.routeName: (context) => const ExamResultPage(),
+        '/glossaryPage': (context) => const GlossaryPage(),
         '/difficultTermsPage': (context) => DifficultTermsPage()
       },
     );

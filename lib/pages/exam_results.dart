@@ -4,9 +4,23 @@ import 'package:flutter/material.dart';
 import 'package:elephant/shared/shared.dart';
 import 'package:provider/provider.dart';
 
+class ExamResultArguments {
+  final bool difficultTerms;
+
+  ExamResultArguments({required this.difficultTerms});
+}
+
 class ExamResultPage extends StatelessWidget {
+  static const routeName = '/examResults';
+
+  const ExamResultPage({
+    Key? key,
+  }) : super(key: key);
+
   @override
   Widget build(BuildContext context) {
+    final args =
+        ModalRoute.of(context)!.settings.arguments as ExamResultArguments;
     Controller controller = Provider.of<Controller>(context);
     List<TermModel> rightTermsList = controller.rightTerms;
     List<TermModel> wrongTermsList = controller.wrongTerms;
@@ -20,94 +34,141 @@ class ExamResultPage extends StatelessWidget {
     // TODO: implement build
     return Scaffold(
       appBar: myAppBar(context: context, type: 'Exam Results'),
-      body: Padding(
-        padding: const EdgeInsets.all(20),
-        child: SingleChildScrollView(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.center,
-            children: [
-              Text(
-                'Score: $rightAnswers/$total',
-                style: textStyleFinalScore,
-              ),
-              const SizedBox(
-                height: 10,
-              ),
-              CircleAvatar(
-                foregroundColor: pLight,
-                backgroundColor: pLight,
-                maxRadius: 80,
-                child: Text(
-                  assing4Score(totalPercentage),
-                  style: textStylescore4Scale,
+      body: FutureBuilder<bool>(
+          future: updateDifficultTerms(controller, args.difficultTerms),
+          builder: (context, asyncSnapshot) {
+            if (!asyncSnapshot.hasData) {
+              return Padding(
+                padding: const EdgeInsets.all(20),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.center,
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  mainAxisSize: MainAxisSize.max,
+                  children: const [
+                    Text('Loading results'),
+                    CircularProgressIndicator(),
+                  ],
+                ),
+              );
+            }
+
+            return Padding(
+              padding: const EdgeInsets.all(20),
+              child: SingleChildScrollView(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.center,
+                  children: [
+                    Text(
+                      'Score: $rightAnswers/$total',
+                      style: textStyleFinalScore,
+                    ),
+                    const SizedBox(
+                      height: 10,
+                    ),
+                    CircleAvatar(
+                      foregroundColor: pLight,
+                      backgroundColor: pLight,
+                      maxRadius: 80,
+                      child: Text(
+                        assing4Score(totalPercentage),
+                        style: textStylescore4Scale,
+                      ),
+                    ),
+                    const SizedBox(
+                      height: 20,
+                    ),
+                    Text(
+                      assignPhrase(totalPercentage),
+                      style: textStylescore4Scale,
+                    ),
+                    const SizedBox(
+                      height: 100,
+                    ),
+                    Row(
+                      crossAxisAlignment: CrossAxisAlignment.center,
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        const Icon(Icons.cancel_outlined),
+                        const SizedBox(
+                          width: 10,
+                        ),
+                        Text(
+                          'Wrong answers: $wrongAnswers',
+                          style: textStyle1,
+                        ),
+                      ],
+                    ),
+                    ListView.builder(
+                        shrinkWrap: true,
+                        itemCount: wrongTermsList.length,
+                        itemBuilder: (context, index) {
+                          TermModel term = wrongTermsList[index];
+                          return ListTile(
+                            leading:
+                                Icon(controller.termIconAsignner(term.type)),
+                            title: Text(term.term),
+                            subtitle: Text(term.answer),
+                          );
+                        }),
+                    Row(
+                      crossAxisAlignment: CrossAxisAlignment.center,
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        const Icon(Icons.check_circle_outlined),
+                        const SizedBox(
+                          width: 10,
+                        ),
+                        Text(
+                          'Correct answers: $rightAnswers',
+                          style: textStyle1,
+                        ),
+                      ],
+                    ),
+                    ListView.builder(
+                        shrinkWrap: true,
+                        itemCount: rightTermsList.length,
+                        itemBuilder: (context, index) {
+                          TermModel term = rightTermsList[index];
+                          return ListTile(
+                            leading:
+                                Icon(controller.termIconAsignner(term.type)),
+                            title: Text(term.term),
+                            subtitle: Text(term.answer),
+                          );
+                        }),
+                  ],
                 ),
               ),
-              const SizedBox(
-                height: 20,
-              ),
-              Text(
-                assignPhrase(totalPercentage),
-                style: textStylescore4Scale,
-              ),
-              const SizedBox(
-                height: 100,
-              ),
-              Row(
-                crossAxisAlignment: CrossAxisAlignment.center,
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  const Icon(Icons.cancel_outlined),
-                  const SizedBox(
-                    width: 10,
-                  ),
-                  Text(
-                    'Wrong answers: $wrongAnswers',
-                    style: textStyle1,
-                  ),
-                ],
-              ),
-              ListView.builder(
-                  shrinkWrap: true,
-                  itemCount: wrongTermsList.length,
-                  itemBuilder: (context, index) {
-                    TermModel term = wrongTermsList[index];
-                    return ListTile(
-                      leading: Icon(controller.termIconAsignner(term.type)),
-                      title: Text(term.term),
-                      subtitle: Text(term.answer),
-                    );
-                  }),
-              Row(
-                crossAxisAlignment: CrossAxisAlignment.center,
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  const Icon(Icons.check_circle_outlined),
-                  const SizedBox(
-                    width: 10,
-                  ),
-                  Text(
-                    'Correct answers: $rightAnswers',
-                    style: textStyle1,
-                  ),
-                ],
-              ),
-              ListView.builder(
-                  shrinkWrap: true,
-                  itemCount: rightTermsList.length,
-                  itemBuilder: (context, index) {
-                    TermModel term = rightTermsList[index];
-                    return ListTile(
-                      leading: Icon(controller.termIconAsignner(term.type)),
-                      title: Text(term.term),
-                      subtitle: Text(term.answer),
-                    );
-                  }),
-            ],
-          ),
-        ),
-      ),
+            );
+          }),
     );
+  }
+
+  Future<bool> updateDifficultTerms(
+      Controller controller, bool difficultTerms) async {
+    bool updated = true;
+    if (difficultTerms) {
+      for (var term in controller.rightTerms) {
+        await term.reference
+            .update({'difficultTerm': false}).onError((error, stackTrace) {
+          updated = false;
+          print(error);
+        });
+      }
+      print('Difficult terms updated');
+    } else {
+      for (var term in controller.wrongTerms) {
+        await term.reference
+            .update({'difficultTerm': true}).onError((error, stackTrace) {
+          updated = false;
+          print(error);
+        });
+      }
+      print('Difficult terms updated');
+    }
+
+    return updated;
   }
 
   String assing4Score(int totalPercentage) {
