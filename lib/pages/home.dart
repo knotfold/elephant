@@ -94,6 +94,7 @@ class DialogAddNewGlossary extends StatefulWidget {
 class _DialogAddNewGlossaryState extends State<DialogAddNewGlossary> {
   @override
   Widget build(BuildContext context) {
+    final textThemeTitle = Theme.of(context).textTheme.headline5;
     bool isLoading = false;
     late String newGlossaryName;
     CollectionReference glossaries =
@@ -103,6 +104,7 @@ class _DialogAddNewGlossaryState extends State<DialogAddNewGlossary> {
     return Dialog(
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
       child: Container(
+        padding: const EdgeInsets.all(10),
         child: Form(
             key: formKey,
             child: Column(
@@ -110,15 +112,10 @@ class _DialogAddNewGlossaryState extends State<DialogAddNewGlossary> {
               mainAxisSize: MainAxisSize.min,
               children: [
                 Container(
-                  decoration: const BoxDecoration(
-                      color: sDark,
-                      borderRadius: BorderRadius.only(
-                          topLeft: Radius.circular(10),
-                          topRight: Radius.circular(10))),
                   padding: const EdgeInsets.all(10),
-                  child: const Text(
+                  child: Text(
                     'Add a new glossary',
-                    style: TextStyle(fontSize: 20, color: Colors.white),
+                    style: textThemeTitle,
                   ),
                 ),
                 const SizedBox(

@@ -28,56 +28,67 @@ class _ExamPageState extends State<ExamPage> {
     final args = ModalRoute.of(context)!.settings.arguments as ExamArguments;
     Controller controller = Provider.of<Controller>(context);
 
-    List<TermModel> termsList = controller.currentTermList;
+    List<TermModel> termsList = args.examType == 'difficultExam'
+        ? controller.difficultTermList
+        : controller.currentTermList;
 
-    // TODO: implement build
-    return Scaffold(
-      appBar: AppBar(
-        title: Text(args.examType),
-        backgroundColor: secondaryColor,
+    controller.difficultExam = args.examType == 'difficultExam';
+
+    return WillPopScope(
+      onWillPop: () async {
+        controller.currentTermList.clear();
+        return true;
+      },
+      child: Scaffold(
+        appBar: AppBar(
+          title: Text(args.examType.toUpperCase()),
+          backgroundColor: secondaryColor,
+        ),
+        body: PageView.builder(
+            itemCount: termsList.length,
+            physics: args.examType == 'exam' ||
+                    args.examType == 'multipleOption' ||
+                    args.examType == 'difficultExam'
+                ? const NeverScrollableScrollPhysics()
+                : const ScrollPhysics(),
+            controller: controller.pageControllerExam,
+            itemBuilder: (context, index) {
+              Widget page;
+              switch (args.examType) {
+                case 'difficultExam':
+                  page = ExamCard(
+                    term: controller.difficultTermList[index],
+                    index: index,
+                  );
+                  break;
+                case 'exam':
+                  page = ExamCard(
+                    term: termsList[index],
+                    index: index,
+                  );
+                  break;
+                case 'flashCards':
+                  page = FlashCard(
+                    term: termsList[index],
+                    page: index,
+                    length: termsList.length,
+                  );
+                  break;
+                case 'multipleOption':
+                  page = ExamCardMultipleOption(
+                      term: termsList[index], indexPageController: index);
+                  break;
+                default:
+                  page = ExamCard(
+                    term: termsList[index],
+                    index: index,
+                  );
+                  break;
+              }
+
+              return page;
+            }),
       ),
-      body: PageView.builder(
-          itemCount: termsList.length,
-          physics: args.examType == 'exam'
-              ? const NeverScrollableScrollPhysics()
-              : const ScrollPhysics(),
-          controller: controller.pageControllerExam,
-          itemBuilder: (context, index) {
-            Widget page;
-            switch (args.examType) {
-              case 'difficultExam':
-                page = ExamCard(
-                  term: controller.difficultTermList[index],
-                  index: index,
-                );
-                break;
-              case 'exam':
-                page = ExamCard(
-                  term: termsList[index],
-                  index: index,
-                );
-                break;
-              case 'flashCards':
-                page = FlashCard(
-                  term: termsList[index],
-                  page: index,
-                  length: termsList.length,
-                );
-                break;
-              case 'multipleOption':
-                page = ExamCardMultipleOption(
-                    term: termsList[index], indexPageController: index);
-                break;
-              default:
-                page = ExamCard(
-                  term: termsList[index],
-                  index: index,
-                );
-                break;
-            }
-
-            return page;
-          }),
     );
   }
 }
@@ -265,7 +276,7 @@ class _ExamCardState extends State<ExamCard> {
                       controller: controller,
                       index: widget.index);
                 },
-                child: checkIfLastPage(controller, widget.index)
+                child: !checkIfLastPage(controller, widget.index)
                     ? const Text('Next question')
                     : const Text('Finish exam')),
             const SizedBox(
@@ -279,23 +290,34 @@ class _ExamCardState extends State<ExamCard> {
 }
 
 bool checkIfLastPage(Controller controller, int index) {
-  bool lastPage = false;
-  if (index != controller.currentTermList.length - 1) {
-    lastPage = true;
+  bool lastPage = true;
+  if (index !=
+      (controller.difficultExam
+              ? controller.difficultTermList.length
+              : controller.currentTermList.length) -
+          1) {
+    lastPage = false;
   }
   return lastPage;
+}
+
+void nextPage(Controller controller, int index) {
+  controller.pageControllerExam.animateToPage(index + 1,
+      duration: const Duration(milliseconds: 500), curve: Curves.easeIn);
 }
 
 void navigationInExam(
     {required BuildContext context,
     required Controller controller,
     required int index}) {
-  if (checkIfLastPage(controller, index)) {
-    controller.pageControllerExam.nextPage(
-        duration: const Duration(seconds: 1), curve: const ElasticInCurve());
+  if (!checkIfLastPage(controller, index)) {
+    nextPage(controller, index);
+    // controller.pageControllerExam.nextPage(
+    //     duration: const Duration(seconds: 1), curve: const ElasticInCurve());
   } else {
     Navigator.of(context).pushReplacementNamed(ExamResultPage.routeName,
-        arguments: ExamResultArguments(difficultTerms: false));
+        arguments:
+            ExamResultArguments(difficultTerms: controller.difficultExam));
   }
 }
 
@@ -454,6 +476,8 @@ List<String> multipleOptionMaker(
     //   }
     // }
   }
+
+  options.shuffle();
 
   return options;
 }

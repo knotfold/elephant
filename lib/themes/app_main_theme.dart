@@ -10,7 +10,7 @@ class GalleryThemeData {
   static final Color _darkFocusColor = Colors.white.withOpacity(0.12);
 
   static ThemeData lightThemeData =
-      themeData(lightColorScheme, _lightFocusColor);
+      themeData(lightColorSchemeGudGreen, _lightFocusColor);
   static ThemeData darkThemeData = themeData(darkColorScheme, _darkFocusColor);
 
   static ThemeData themeData(ColorScheme colorScheme, Color focusColor) {
@@ -19,32 +19,32 @@ class GalleryThemeData {
       textTheme: _textTheme,
       // Matches manifest.json colors and background color.
       primaryColor: const Color(0xFF030303),
-      appBarTheme: AppBarTheme(
-        backgroundColor: colorScheme.primaryVariant,
-        elevation: 0,
-        iconTheme: IconThemeData(color: colorScheme.primary),
+      appBarTheme: const AppBarTheme(
+        elevation: 1,
+        // iconTheme: IconThemeData(color: colorScheme.primary),
       ),
-
-      buttonTheme: const ButtonThemeData(colorScheme: lightColorScheme),
+      buttonBarTheme: ButtonBarThemeData(
+        buttonHeight: 15,
+      ),
+      buttonTheme: const ButtonThemeData(colorScheme: lightColorSchemeGudGreen),
       iconTheme: IconThemeData(color: colorScheme.onPrimary),
       canvasColor: colorScheme.background,
       scaffoldBackgroundColor: colorScheme.background,
       highlightColor: Colors.transparent,
       focusColor: focusColor,
       inputDecorationTheme: InputDecorationTheme(
-          labelStyle: TextStyle(color: colorScheme.secondary),
+          labelStyle: const TextStyle(color: _lightFillColor),
           focusColor: colorScheme.primaryVariant,
           enabledBorder: const OutlineInputBorder(
-            borderSide: BorderSide(color: pDark),
-          ),
+              borderSide: BorderSide(color: secondaryColor)),
           focusedBorder: const OutlineInputBorder(
-            borderSide: BorderSide(color: pDark),
+            borderSide: BorderSide(color: secondaryColor),
           ),
           border: const OutlineInputBorder(
             borderRadius: BorderRadius.all(Radius.circular(10)),
             borderSide: BorderSide(color: Colors.black),
           ),
-          hintStyle: TextStyle(color: colorScheme.primaryVariant)),
+          hintStyle: const TextStyle(color: sDark)),
       snackBarTheme: SnackBarThemeData(
         behavior: SnackBarBehavior.floating,
         backgroundColor: Color.alphaBlend(
@@ -56,20 +56,57 @@ class GalleryThemeData {
     );
   }
 
-  static const ColorScheme lightColorScheme = ColorScheme(
+  // static const ColorScheme lightColorScheme = ColorScheme(
+  //   // primary: Color(0xFFaebfbe),
+  //   primary: Color(0xFFe0f2f1),
+  //   primaryVariant: Color(0xFFaebfbe),
+  //   secondary: Color(0xFF757575),
+  //   secondaryVariant: Color(0xFF494949),
+  //   // background: Color(0xFFE6EBEB),
+  //   background: Colors.white,
+  //   surface: Color(0xFFFAFBFB),
+  //   onBackground: Colors.black,
+  //   error: _lightFillColor,
+  //   onError: _lightFillColor,
+  //   onPrimary: _lightFillColor,
+  //   onSecondary: _darkFillColor,
+  //   onSurface: Color(0xFFe0f2f1),
+  //   brightness: Brightness.light,
+  // );
+
+  static const ColorScheme lightColorSchemeYellow = ColorScheme(
     // primary: Color(0xFFaebfbe),
-    primary: Color(0xFFe0f2f1),
-    primaryVariant: Color(0xFFaebfbe),
-    secondary: Color(0xFF757575),
-    secondaryVariant: Color(0xFF494949),
-    background: Color(0xFFE6EBEB),
-    surface: Color(0xFFFAFBFB),
+    primary: Color(0xFFfafafa),
+    primaryVariant: Color(0xFFc7c7c7),
+    secondary: Color(0xFFfcd734),
+    secondaryVariant: Color(0xFFc5a600),
+    // background: Color(0xFFE6EBEB),
+    background: primary,
+    surface: primary,
     onBackground: Colors.black,
     error: _lightFillColor,
     onError: _lightFillColor,
     onPrimary: _lightFillColor,
-    onSecondary: _darkFillColor,
-    onSurface: Color(0xFFe0f2f1),
+    onSecondary: _lightFillColor,
+    onSurface: _lightFillColor,
+    brightness: Brightness.light,
+  );
+
+  static const ColorScheme lightColorSchemeGudGreen = ColorScheme(
+    // primary: Color(0xFFaebfbe),
+    primary: Color(0xFFfafafa),
+    primaryVariant: Color(0xFFc7c7c7),
+    secondary: Color(0xFF15d683),
+    secondaryVariant: Color(0xFF00a355),
+    // background: Color(0xFFE6EBEB),
+    background: primary,
+    surface: primary,
+    onBackground: Colors.black,
+    error: _lightFillColor,
+    onError: _lightFillColor,
+    onPrimary: _lightFillColor,
+    onSecondary: _lightFillColor,
+    onSurface: _lightFillColor,
     brightness: Brightness.light,
   );
 
@@ -83,8 +120,8 @@ class GalleryThemeData {
     onBackground: Color(0x0DFFFFFF), // White with 0.05 opacity
     error: _darkFillColor,
     onError: _darkFillColor,
-    onPrimary: _darkFillColor,
-    onSecondary: _darkFillColor,
+    onPrimary: _lightFillColor,
+    onSecondary: _lightFillColor,
     onSurface: _darkFillColor,
     brightness: Brightness.dark,
   );

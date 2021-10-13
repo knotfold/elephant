@@ -18,6 +18,7 @@ class Controller with ChangeNotifier {
   bool mixTermsAnswers = false;
   bool testFromAnswers = false;
   bool testFromTerms = true;
+  bool difficultExam = false;
 
   ExamType examType = ExamType.useTerms;
 

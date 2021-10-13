@@ -5,13 +5,16 @@ import 'package:elephant/services/controller.dart';
 import 'package:provider/provider.dart';
 
 class DifficultTermsPage extends StatelessWidget {
+  const DifficultTermsPage({Key? key}) : super(key: key);
+
   @override
   Widget build(BuildContext context) {
     Controller controller = Provider.of<Controller>(context);
     final textStyleHeadline = Theme.of(context).textTheme.headline5;
     // TODO: implement build
     return Scaffold(
-      appBar: myAppBar(context: context, type: 'Difficult Terms'),
+      appBar: myAppBar(
+          context: context, type: 'Difficult Terms', title: 'Difficult terms'),
       body: Padding(
         padding: const EdgeInsets.all(10.0),
         child: Column(

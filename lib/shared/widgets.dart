@@ -35,12 +35,7 @@ AppBar myAppBar(
       type == 'Difficult Terms'
           ? IconButton(
               onPressed: () {
-                showDialog(
-                    context: context,
-                    builder: (context) {
-                      return navigateToExam(
-                          'difficultExam', context, controller);
-                    });
+                navigateToDifficultExam('difficultExam', context, controller);
               },
               icon: const Icon(Icons.play_circle_outline_outlined))
           : Container(),
@@ -50,11 +45,14 @@ AppBar myAppBar(
   );
 }
 
-navigateToExam(
+navigateToDifficultExam(
   String type,
   BuildContext context,
   Controller controller,
 ) {
+  controller.clearLists();
+  controller.generateCurrentTermsList();
+  controller.generateDifficultTermList();
   Navigator.of(context).pushNamed(ExamPage.routeName,
       arguments: ExamArguments(
         examType: type,
@@ -247,7 +245,6 @@ class GlossaryCard extends StatelessWidget {
               const Icon(
                 Icons.book,
                 size: 30,
-                color: pDark,
               ),
               const SizedBox(
                 height: 35,
@@ -259,7 +256,6 @@ class GlossaryCard extends StatelessWidget {
                 ),
                 child: Text(
                   glossary.name,
-                  style: const TextStyle(color: Colors.white),
                 ),
               ),
 

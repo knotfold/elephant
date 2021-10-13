@@ -26,122 +26,132 @@ class ExamResultPage extends StatelessWidget {
     List<TermModel> wrongTermsList = controller.wrongTerms;
     int rightAnswers = rightTermsList.length;
     int wrongAnswers = wrongTermsList.length;
-    int total = controller.currentTermList.length;
+    int total = args.difficultTerms
+        ? controller.difficultTermList.length
+        : controller.currentTermList.length;
     int totalPercentage = (rightAnswers / total * 100).round();
     final textStyle1 = Theme.of(context).textTheme.headline6;
     final textStyleFinalScore = Theme.of(context).textTheme.headline6;
     final textStylescore4Scale = Theme.of(context).textTheme.headline1;
     // TODO: implement build
-    return Scaffold(
-      appBar: myAppBar(context: context, type: 'Exam Results'),
-      body: FutureBuilder<bool>(
-          future: updateDifficultTerms(controller, args.difficultTerms),
-          builder: (context, asyncSnapshot) {
-            if (!asyncSnapshot.hasData) {
+    return WillPopScope(
+      onWillPop: () async {
+        controller.clearLists();
+        controller.generateCurrentTermsList();
+        controller.generateDifficultTermList();
+        return true;
+      },
+      child: Scaffold(
+        appBar: myAppBar(context: context, type: 'Exam Results'),
+        body: FutureBuilder<bool>(
+            future: updateDifficultTerms(controller, args.difficultTerms),
+            builder: (context, asyncSnapshot) {
+              if (!asyncSnapshot.hasData) {
+                return Padding(
+                  padding: const EdgeInsets.all(20),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.center,
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    mainAxisSize: MainAxisSize.max,
+                    children: const [
+                      Text('Loading results'),
+                      CircularProgressIndicator(),
+                    ],
+                  ),
+                );
+              }
+
               return Padding(
                 padding: const EdgeInsets.all(20),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.center,
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  mainAxisSize: MainAxisSize.max,
-                  children: const [
-                    Text('Loading results'),
-                    CircularProgressIndicator(),
-                  ],
-                ),
-              );
-            }
-
-            return Padding(
-              padding: const EdgeInsets.all(20),
-              child: SingleChildScrollView(
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  crossAxisAlignment: CrossAxisAlignment.center,
-                  children: [
-                    Text(
-                      'Score: $rightAnswers/$total',
-                      style: textStyleFinalScore,
-                    ),
-                    const SizedBox(
-                      height: 10,
-                    ),
-                    CircleAvatar(
-                      foregroundColor: pLight,
-                      backgroundColor: pLight,
-                      maxRadius: 80,
-                      child: Text(
-                        assing4Score(totalPercentage),
+                child: SingleChildScrollView(
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    crossAxisAlignment: CrossAxisAlignment.center,
+                    children: [
+                      Text(
+                        'Score: $rightAnswers/$total',
+                        style: textStyleFinalScore,
+                      ),
+                      const SizedBox(
+                        height: 10,
+                      ),
+                      CircleAvatar(
+                        foregroundColor: pLight,
+                        backgroundColor: pLight,
+                        maxRadius: 80,
+                        child: Text(
+                          assing4Score(totalPercentage),
+                          style: textStylescore4Scale,
+                        ),
+                      ),
+                      const SizedBox(
+                        height: 20,
+                      ),
+                      Text(
+                        assignPhrase(totalPercentage),
                         style: textStylescore4Scale,
                       ),
-                    ),
-                    const SizedBox(
-                      height: 20,
-                    ),
-                    Text(
-                      assignPhrase(totalPercentage),
-                      style: textStylescore4Scale,
-                    ),
-                    const SizedBox(
-                      height: 100,
-                    ),
-                    Row(
-                      crossAxisAlignment: CrossAxisAlignment.center,
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        const Icon(Icons.cancel_outlined),
-                        const SizedBox(
-                          width: 10,
-                        ),
-                        Text(
-                          'Wrong answers: $wrongAnswers',
-                          style: textStyle1,
-                        ),
-                      ],
-                    ),
-                    ListView.builder(
-                        shrinkWrap: true,
-                        itemCount: wrongTermsList.length,
-                        itemBuilder: (context, index) {
-                          TermModel term = wrongTermsList[index];
-                          return ListTile(
-                            leading:
-                                Icon(controller.termIconAsignner(term.type)),
-                            title: Text(term.term),
-                            subtitle: Text(term.answer),
-                          );
-                        }),
-                    Row(
-                      crossAxisAlignment: CrossAxisAlignment.center,
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        const Icon(Icons.check_circle_outlined),
-                        const SizedBox(
-                          width: 10,
-                        ),
-                        Text(
-                          'Correct answers: $rightAnswers',
-                          style: textStyle1,
-                        ),
-                      ],
-                    ),
-                    ListView.builder(
-                        shrinkWrap: true,
-                        itemCount: rightTermsList.length,
-                        itemBuilder: (context, index) {
-                          TermModel term = rightTermsList[index];
-                          return ListTile(
-                            leading:
-                                Icon(controller.termIconAsignner(term.type)),
-                            title: Text(term.term),
-                            subtitle: Text(term.answer),
-                          );
-                        }),
-                  ],
+                      const SizedBox(
+                        height: 100,
+                      ),
+                      Row(
+                        crossAxisAlignment: CrossAxisAlignment.center,
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          const Icon(Icons.cancel_outlined),
+                          const SizedBox(
+                            width: 10,
+                          ),
+                          Text(
+                            'Wrong answers: $wrongAnswers',
+                            style: textStyle1,
+                          ),
+                        ],
+                      ),
+                      ListView.builder(
+                          shrinkWrap: true,
+                          itemCount: wrongTermsList.length,
+                          itemBuilder: (context, index) {
+                            TermModel term = wrongTermsList[index];
+                            return ListTile(
+                              leading:
+                                  Icon(controller.termIconAsignner(term.type)),
+                              title: Text(term.term),
+                              subtitle: Text(term.answer),
+                            );
+                          }),
+                      Row(
+                        crossAxisAlignment: CrossAxisAlignment.center,
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          const Icon(Icons.check_circle_outlined),
+                          const SizedBox(
+                            width: 10,
+                          ),
+                          Text(
+                            'Correct answers: $rightAnswers',
+                            style: textStyle1,
+                          ),
+                        ],
+                      ),
+                      ListView.builder(
+                          shrinkWrap: true,
+                          itemCount: rightTermsList.length,
+                          itemBuilder: (context, index) {
+                            TermModel term = rightTermsList[index];
+                            return ListTile(
+                              leading:
+                                  Icon(controller.termIconAsignner(term.type)),
+                              title: Text(term.term),
+                              subtitle: Text(term.answer),
+                            );
+                          }),
+                    ],
+                  ),
                 ),
-              ),
-            );
-          }),
+              );
+            }),
+      ),
     );
   }
 
@@ -173,8 +183,6 @@ class ExamResultPage extends StatelessWidget {
 
   String assing4Score(int totalPercentage) {
     String score4 = 'Z';
-
-    print(totalPercentage);
 
     if (totalPercentage < 65) {
       score4 = 'F';
