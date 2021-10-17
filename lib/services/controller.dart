@@ -1,5 +1,6 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:elephant/services/services.dart';
+import 'package:elephant/shared/colors.dart';
 import 'package:flutter/material.dart';
 
 import 'package:flutter/foundation.dart';
@@ -12,6 +13,10 @@ class Controller with ChangeNotifier {
   UserModel user = UserModel(username: 'Kno');
   late GlossaryModel _currentGlossary;
   late TermModel currentTerm;
+
+  //mutlipleOption tiles
+  bool tileStatus = true;
+  Color tileColor = primary;
 
   //bool
   bool useFilteredTerms = false;

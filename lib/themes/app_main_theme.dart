@@ -9,6 +9,8 @@ class GalleryThemeData {
   static final Color _lightFocusColor = Colors.black.withOpacity(0.12);
   static final Color _darkFocusColor = Colors.white.withOpacity(0.12);
 
+  static const int _defaultColor = 0xcafefeed;
+
   static ThemeData lightThemeData =
       themeData(lightColorSchemeGudGreen, _lightFocusColor);
   static ThemeData darkThemeData = themeData(darkColorScheme, _darkFocusColor);
@@ -23,17 +25,33 @@ class GalleryThemeData {
         elevation: 1,
         // iconTheme: IconThemeData(color: colorScheme.primary),
       ),
-      buttonBarTheme: ButtonBarThemeData(
+
+      radioTheme: RadioThemeData(
+          fillColor: MaterialStateProperty.all<Color>(secondaryColor)),
+      checkboxTheme: CheckboxThemeData(
+          checkColor: MaterialStateProperty.all<Color>(
+              colorScheme.brightness == Brightness.dark
+                  ? Colors.white
+                  : Colors.black),
+          fillColor: MaterialStateProperty.all<Color>(secondaryColor)),
+
+      textSelectionTheme:
+          const TextSelectionThemeData(selectionColor: secondaryColor),
+      buttonBarTheme: const ButtonBarThemeData(
         buttonHeight: 15,
       ),
-      buttonTheme: const ButtonThemeData(colorScheme: lightColorSchemeGudGreen),
+      // buttonTheme: const ButtonThemeData(colorScheme: ),
       iconTheme: IconThemeData(color: colorScheme.onPrimary),
       canvasColor: colorScheme.background,
       scaffoldBackgroundColor: colorScheme.background,
       highlightColor: Colors.transparent,
       focusColor: focusColor,
+
       inputDecorationTheme: InputDecorationTheme(
-          labelStyle: const TextStyle(color: _lightFillColor),
+          labelStyle: TextStyle(
+              color: colorScheme.brightness == Brightness.dark
+                  ? _darkFillColor
+                  : _lightFillColor),
           focusColor: colorScheme.primaryVariant,
           enabledBorder: const OutlineInputBorder(
               borderSide: BorderSide(color: secondaryColor)),
@@ -111,16 +129,16 @@ class GalleryThemeData {
   );
 
   static const ColorScheme darkColorScheme = ColorScheme(
-    primary: Color(0xFFFF8383),
-    primaryVariant: Color(0xFF1CDEC9),
-    secondary: Color(0xFF4D1F7C),
-    secondaryVariant: Color(0xFF451B6F),
-    background: Color(0xFF241E30),
-    surface: Color(0xFF1F1929),
-    onBackground: Color(0x0DFFFFFF), // White with 0.05 opacity
+    primary: Color(0xFF212121),
+    primaryVariant: Color(0xFF1b1b1b),
+    secondary: Color(0xFF15d683),
+    secondaryVariant: Color(0xFF00a355),
+    background: Color(0xFF1b1b1b),
+    surface: Color(0xFF1b1b1b),
+    onBackground: _darkFillColor, // White with 0.05 opacity
     error: _darkFillColor,
     onError: _darkFillColor,
-    onPrimary: _lightFillColor,
+    onPrimary: _darkFillColor,
     onSecondary: _lightFillColor,
     onSurface: _darkFillColor,
     brightness: Brightness.dark,
@@ -132,9 +150,12 @@ class GalleryThemeData {
   static const _bold = FontWeight.w700;
 
   static final TextTheme _textTheme = TextTheme(
-    headline4: GoogleFonts.montserrat(fontWeight: _bold, fontSize: 20.0),
+    headline4: GoogleFonts.lato(
+      fontWeight: _bold,
+      fontSize: 20.0,
+    ),
     caption: GoogleFonts.oswald(fontWeight: _semiBold, fontSize: 16.0),
-    headline5: GoogleFonts.oswald(fontWeight: _medium, fontSize: 16.0),
+    headline5: GoogleFonts.oswald(fontWeight: _medium, fontSize: 17.0),
     subtitle1: GoogleFonts.montserrat(fontWeight: _medium, fontSize: 16.0),
     overline: GoogleFonts.montserrat(fontWeight: _medium, fontSize: 12.0),
     bodyText1: GoogleFonts.montserrat(fontWeight: _regular, fontSize: 14.0),

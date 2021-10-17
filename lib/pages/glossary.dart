@@ -115,75 +115,86 @@ class GlossaryPage extends StatelessWidget {
                     );
                   }
 
-                  return ListView.builder(
-                    physics: const ScrollPhysics(
-                        parent: NeverScrollableScrollPhysics()),
-                    shrinkWrap: true,
-                    itemCount: controller.currentGlossaryDocuments.length,
-                    itemBuilder: (context, index) {
-                      TermModel term = TermModel.fromDocumentSnapshot(
-                          controller.currentGlossaryDocuments[index]);
-                      return ListTile(
-                        trailing: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            IconButton(
-                                onPressed: () {
-                                  showDialog(
-                                      context: context,
-                                      builder: (context) {
-                                        return DialogAddNewTerm(
-                                          glossaryModel:
-                                              controller.currentGlossary,
-                                          term: term,
-                                          emptyTerm: false,
-                                        );
-                                      });
-                                },
-                                icon: const Icon(Icons.edit_outlined)),
-                            IconButton(
-                                onPressed: () {
-                                  showDialog(
-                                      context: context,
-                                      builder: (context) {
-                                        return AlertDialog(
-                                          title: const Text(
-                                              'Are you sure you want to delete this term?'),
-                                          actions: [
-                                            ElevatedButton(
-                                                onPressed: () {
-                                                  Navigator.of(context).pop();
-                                                },
-                                                child: const Text('Cancel')),
-                                            ElevatedButton(
-                                                onPressed: () async {
-                                                  await controller
-                                                      .currentGlossaryDocuments[
-                                                          index]
-                                                      .reference
-                                                      .delete();
-                                                  Navigator.of(context).pop();
-                                                },
-                                                child: const Text('Delete'))
-                                          ],
-                                        );
-                                      });
-                                },
-                                icon: const Icon(Icons.delete_forever_rounded))
-                          ],
-                        ),
-                        leading: Icon(controller.termIconAsignner(term.type)),
-                        title: Text(term.term),
-                        subtitle: Text(term.answer),
-                      );
-                    },
-                  );
+                  return ListViewBuilderTerms(controller: controller);
                 },
               ),
             ],
           ),
         ),
       ),
+    );
+  }
+}
+
+class ListViewBuilderTerms extends StatelessWidget {
+  const ListViewBuilderTerms({
+    Key? key,
+    required this.controller,
+  }) : super(key: key);
+
+  final Controller controller;
+
+  @override
+  Widget build(BuildContext context) {
+    return ListView.builder(
+      physics: const ScrollPhysics(parent: NeverScrollableScrollPhysics()),
+      shrinkWrap: true,
+      itemCount: controller.currentGlossaryDocuments.length,
+      itemBuilder: (context, index) {
+        TermModel term = TermModel.fromDocumentSnapshot(
+            controller.currentGlossaryDocuments[index]);
+        return ListTile(
+          trailing: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              IconButton(
+                  onPressed: () {
+                    showDialog(
+                        context: context,
+                        builder: (context) {
+                          return DialogAddNewTerm(
+                            glossaryModel: controller.currentGlossary,
+                            term: term,
+                            emptyTerm: false,
+                          );
+                        });
+                  },
+                  icon: const Icon(Icons.edit_outlined)),
+              IconButton(
+                  onPressed: () {
+                    showDialog(
+                        context: context,
+                        builder: (context) {
+                          return AlertDialog(
+                            title: const Text(
+                                'Are you sure you want to delete this term?'),
+                            actions: [
+                              ElevatedButton(
+                                  onPressed: () {
+                                    Navigator.of(context).pop();
+                                  },
+                                  child: const Text('Cancel')),
+                              ElevatedButton(
+                                  onPressed: () async {
+                                    await controller
+                                        .currentGlossaryDocuments[index]
+                                        .reference
+                                        .delete();
+                                    Navigator.of(context).pop();
+                                  },
+                                  child: const Text('Delete'))
+                            ],
+                          );
+                        });
+                  },
+                  icon: const Icon(Icons.delete_forever_rounded))
+            ],
+          ),
+          leading: Icon(controller.termIconAsignner(term.type)),
+          title: Text(term.term),
+          subtitle: Text(term.answer),
+        );
+      },
     );
   }
 }
@@ -406,193 +417,196 @@ class _DialogAddNewTermState extends State<DialogAddNewTerm> {
     CollectionReference termsCollectionRef =
         widget.glossaryModel.documentReference.collection('terms');
 
+    final textThemeTilte = Theme.of(context).textTheme.headline4;
+
     return Dialog(
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
       child: SingleChildScrollView(
-        child: Form(
-          key: formKey,
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Container(
-                decoration: const BoxDecoration(
-                    color: sDark,
-                    borderRadius: BorderRadius.only(
-                        topLeft: Radius.circular(10),
-                        topRight: Radius.circular(10))),
-                padding: const EdgeInsets.all(10),
-                child: const Text(
+        child: Padding(
+          padding: const EdgeInsets.all(15.0),
+          child: Form(
+            key: formKey,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
                   'Add a new term',
-                  style: TextStyle(fontSize: 20, color: Colors.white),
+                  style: textThemeTilte,
                 ),
-              ),
-              Padding(
-                padding: const EdgeInsets.all(8.0),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    const SizedBox(
-                      height: 10,
-                    ),
-                    const SizedBox(
-                      height: 10,
-                    ),
-                    TextFormField(
-                      onChanged: (value) {
-                        widget.term.term = value;
-                      },
-                      controller: textEditingControllerTerm,
-                      decoration: const InputDecoration(
-                        labelText: 'Term',
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.all(
-                            Radius.circular(10),
+                Padding(
+                  padding: const EdgeInsets.all(8.0),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      const SizedBox(
+                        height: 10,
+                      ),
+                      const SizedBox(
+                        height: 10,
+                      ),
+                      TextFormField(
+                        onChanged: (value) {
+                          widget.term.term = value;
+                        },
+                        controller: textEditingControllerTerm,
+                        decoration: const InputDecoration(
+                          labelText: 'Term',
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.all(
+                              Radius.circular(10),
+                            ),
                           ),
                         ),
+                        validator: (value) {
+                          if (value!.trim() == '') {
+                            return 'Please give a name to the term';
+                          }
+                        },
+                        onSaved: (value) {
+                          termName = value!;
+                        },
                       ),
-                      validator: (value) {
-                        if (value!.trim() == '') {
-                          return 'Please give a name to the term';
-                        }
-                      },
-                      onSaved: (value) {
-                        termName = value!;
-                      },
-                    ),
-                    const SizedBox(
-                      height: 10,
-                    ),
-                    TextFormField(
-                      onChanged: (value) {
-                        widget.term.answer = value;
-                      },
-                      controller: textEditingControllerAnswer,
-                      decoration: const InputDecoration(
-                        labelText: 'Answer',
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.all(
-                            Radius.circular(10),
+                      const SizedBox(
+                        height: 10,
+                      ),
+                      TextFormField(
+                        onChanged: (value) {
+                          widget.term.answer = value;
+                        },
+                        controller: textEditingControllerAnswer,
+                        decoration: const InputDecoration(
+                          labelText: 'Answer',
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.all(
+                              Radius.circular(10),
+                            ),
                           ),
                         ),
-                      ),
-                      validator: (value) {
-                        if (value!.trim() == '') {
-                          return 'Please give a meaning or translation';
-                        }
-                      },
-                      onSaved: (value) {
-                        termAnswer = value!;
-                      },
-                    ),
-                    const SizedBox(
-                      height: 10,
-                    ),
-                    Padding(
-                      padding: const EdgeInsets.all(8.0),
-                      child: DropdownButton<String>(
-                        value: dropdownValue,
-                        style: const TextStyle(color: Colors.black),
-                        icon: const Icon(Icons.arrow_downward),
-                        underline: Container(
-                          height: 2,
-                          color: primary,
-                        ),
-                        onChanged: (String? newValue) {
-                          setState(() {
-                            dropdownValue = newValue!;
-                          });
+                        validator: (value) {
+                          if (value!.trim() == '') {
+                            return 'Please give a meaning or translation';
+                          }
                         },
-                        items: enumToList()
-                            .map<DropdownMenuItem<String>>((String value) {
-                          return DropdownMenuItem<String>(
-                            value: value,
-                            child: Text(value),
-                          );
-                        }).toList(),
-                      ),
-                    ),
-                    Padding(
-                      padding: const EdgeInsets.all(8.0),
-                      child: DropdownButton<dynamic>(
-                        value: dropdownValueTags,
-                        style: const TextStyle(color: Colors.black),
-                        icon: const Icon(Icons.arrow_downward),
-                        underline: Container(
-                          height: 2,
-                          color: primary,
-                        ),
-                        onChanged: (dynamic newValue) {
-                          setState(() {
-                            dropdownValueTags = newValue!.toString();
-                          });
+                        onSaved: (value) {
+                          termAnswer = value!;
                         },
-                        items: controller.currentGlossary.tags
-                            .map<DropdownMenuItem<dynamic>>((dynamic value) {
-                          return DropdownMenuItem<dynamic>(
-                            value: value,
-                            child: Text(value),
-                          );
-                        }).toList(),
                       ),
-                    ),
-                    isLoading
-                        // ignore: dead_code
-                        ? const CircularProgressIndicator()
-                        : ButtonBar(
-                            children: [
-                              ElevatedButton(
-                                onPressed: () async {
-                                  if (!formKey.currentState!.validate()) {
-                                    return;
-                                  }
-                                  formKey.currentState!.save();
-                                  setState(() {
-                                    isLoading = true;
-                                  });
-                                  if (!emptyTerm) {
-                                    widget.term.term =
-                                        textEditingControllerTerm.text;
-                                    widget.term.answer =
-                                        textEditingControllerAnswer.text;
-                                    widget.term.type = dropdownValue;
-                                    widget.term.tag = dropdownValueTags;
-
-                                    await widget.term.reference
-                                        .update(widget.term.toMap());
-                                  } else {
-                                    if (!await checkDupeTerm(
-                                        termsCollectionRef, termName)) {
-                                      Fluttertoast.showToast(
-                                          msg: 'This term already exists',
-                                          toastLength: Toast.LENGTH_LONG);
-
+                      const SizedBox(
+                        height: 10,
+                      ),
+                      Padding(
+                        padding: const EdgeInsets.all(8.0),
+                        child: DropdownButton<String>(
+                          value: dropdownValue,
+                          style: TextStyle(color: dropDownTextColor()),
+                          icon: const Icon(Icons.arrow_downward),
+                          underline: Container(
+                            height: 2,
+                            color: primary,
+                          ),
+                          onChanged: (String? newValue) {
+                            setState(() {
+                              dropdownValue = newValue!;
+                            });
+                          },
+                          items: enumToList()
+                              .map<DropdownMenuItem<String>>((String value) {
+                            return DropdownMenuItem<String>(
+                              value: value,
+                              child: Text(value),
+                            );
+                          }).toList(),
+                        ),
+                      ),
+                      Padding(
+                        padding: const EdgeInsets.all(8.0),
+                        child: DropdownButton<dynamic>(
+                          value: dropdownValueTags,
+                          style: TextStyle(color: dropDownTextColor()),
+                          icon: const Icon(Icons.arrow_downward),
+                          underline: Container(
+                            height: 2,
+                            color: primary,
+                          ),
+                          onChanged: (dynamic newValue) {
+                            setState(() {
+                              dropdownValueTags = newValue!.toString();
+                            });
+                          },
+                          items: controller.currentGlossary.tags
+                              .map<DropdownMenuItem<dynamic>>((dynamic value) {
+                            return DropdownMenuItem<dynamic>(
+                              value: value,
+                              child: Text(value),
+                            );
+                          }).toList(),
+                        ),
+                      ),
+                      isLoading
+                          // ignore: dead_code
+                          ? const CircularProgressIndicator()
+                          : ButtonBar(
+                              children: [
+                                ElevatedButton(
+                                  onPressed: () async {
+                                    if (!formKey.currentState!.validate()) {
                                       return;
                                     }
+                                    formKey.currentState!.save();
+                                    setState(() {
+                                      isLoading = true;
+                                    });
+                                    if (!emptyTerm) {
+                                      widget.term.term =
+                                          textEditingControllerTerm.text;
+                                      widget.term.answer =
+                                          textEditingControllerAnswer.text;
+                                      widget.term.type = dropdownValue;
+                                      widget.term.tag = dropdownValueTags;
 
-                                    await addNewTerm(termsCollectionRef);
-                                  }
+                                      await widget.term.reference
+                                          .update(widget.term.toMap());
+                                    } else {
+                                      if (!await checkDupeTerm(
+                                          termsCollectionRef, termName)) {
+                                        Fluttertoast.showToast(
+                                            msg: 'This term already exists',
+                                            toastLength: Toast.LENGTH_LONG);
 
-                                  setState(() {
-                                    isLoading = false;
-                                  });
-                                  Navigator.of(context).pop();
-                                },
-                                child: emptyTerm
-                                    ? const Text('Add term')
-                                    : const Text('Edit term'),
-                              ),
-                            ],
-                          )
-                  ],
+                                        return;
+                                      }
+
+                                      await addNewTerm(termsCollectionRef);
+                                    }
+
+                                    setState(() {
+                                      isLoading = false;
+                                    });
+                                    Navigator.of(context).pop();
+                                  },
+                                  child: emptyTerm
+                                      ? const Text('Add term')
+                                      : const Text('Edit term'),
+                                ),
+                              ],
+                            )
+                    ],
+                  ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
         ),
       ),
     );
+  }
+
+  Color dropDownTextColor() {
+    return Theme.of(context).brightness == Brightness.dark
+        ? Colors.white
+        : Colors.black;
   }
 
   Future addNewTerm(CollectionReference termsCollectionRef) async {

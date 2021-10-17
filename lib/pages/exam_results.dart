@@ -47,16 +47,18 @@ class ExamResultPage extends StatelessWidget {
             future: updateDifficultTerms(controller, args.difficultTerms),
             builder: (context, asyncSnapshot) {
               if (!asyncSnapshot.hasData) {
-                return Padding(
-                  padding: const EdgeInsets.all(20),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.center,
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    mainAxisSize: MainAxisSize.max,
-                    children: const [
-                      Text('Loading results'),
-                      CircularProgressIndicator(),
-                    ],
+                return SingleChildScrollView(
+                  child: Padding(
+                    padding: const EdgeInsets.all(20),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.center,
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      mainAxisSize: MainAxisSize.max,
+                      children: const [
+                        Text('Loading results'),
+                        CircularProgressIndicator(),
+                      ],
+                    ),
                   ),
                 );
               }
@@ -76,8 +78,8 @@ class ExamResultPage extends StatelessWidget {
                         height: 10,
                       ),
                       CircleAvatar(
-                        foregroundColor: pLight,
-                        backgroundColor: pLight,
+                        foregroundColor: secondaryColor,
+                        backgroundColor: secondaryColor,
                         maxRadius: 80,
                         child: Text(
                           assing4Score(totalPercentage),
@@ -109,6 +111,7 @@ class ExamResultPage extends StatelessWidget {
                         ],
                       ),
                       ListView.builder(
+                          physics: const NeverScrollableScrollPhysics(),
                           shrinkWrap: true,
                           itemCount: wrongTermsList.length,
                           itemBuilder: (context, index) {
@@ -124,7 +127,10 @@ class ExamResultPage extends StatelessWidget {
                         crossAxisAlignment: CrossAxisAlignment.center,
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
-                          const Icon(Icons.check_circle_outlined),
+                          const Icon(
+                            Icons.check_circle_outlined,
+                            color: secondaryColor,
+                          ),
                           const SizedBox(
                             width: 10,
                           ),
@@ -135,6 +141,7 @@ class ExamResultPage extends StatelessWidget {
                         ],
                       ),
                       ListView.builder(
+                          physics: const NeverScrollableScrollPhysics(),
                           shrinkWrap: true,
                           itemCount: rightTermsList.length,
                           itemBuilder: (context, index) {

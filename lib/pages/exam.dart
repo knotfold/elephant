@@ -42,7 +42,6 @@ class _ExamPageState extends State<ExamPage> {
       child: Scaffold(
         appBar: AppBar(
           title: Text(args.examType.toUpperCase()),
-          backgroundColor: secondaryColor,
         ),
         body: PageView.builder(
             itemCount: termsList.length,
@@ -337,34 +336,15 @@ class ExamCardMultipleOption extends StatefulWidget {
 }
 
 class _ExamCardMultipleOptionState extends State<ExamCardMultipleOption> {
-  bool tileEnabled = true;
   Color tileColor = primary;
   bool useTerms = true;
+  List<String>? options;
+  String? answer;
 
   @override
   Widget build(BuildContext context) {
     final textStyleTerm = Theme.of(context).textTheme.headline2;
     Controller controller = Provider.of(context);
-    String answer = '';
-    switch (controller.examType) {
-      case ExamType.useTerms:
-        answer = widget.term.answer;
-        break;
-      case ExamType.useAnswers:
-        useTerms = false;
-        answer = widget.term.term;
-        break;
-      case ExamType.mixed:
-        int i = Random().nextInt(2);
-        if (i % 2 == 0) {
-          useTerms = true;
-          answer = widget.term.answer;
-        } else {
-          useTerms = false;
-          answer = widget.term.term;
-        }
-        break;
-    }
 
     // if (controller.testFromAnswers) {
     //   useTerms = false;
@@ -382,7 +362,31 @@ class _ExamCardMultipleOptionState extends State<ExamCardMultipleOption> {
     //   }
     // }
 
-    List<String> options = multipleOptionMaker(controller, answer, useTerms);
+    // the answer and options variable only get rebuild when the tilestatus is positive again, this status is handled in the answertile and
+    //it is negative when the tile is clicked and set to positive on navigation
+    if (controller.tileStatus) {
+      switch (controller.examType) {
+        case ExamType.useTerms:
+          answer = widget.term.answer;
+          break;
+        case ExamType.useAnswers:
+          useTerms = false;
+          answer = widget.term.term;
+          break;
+        case ExamType.mixed:
+          int i = Random().nextInt(2);
+          if (i % 2 == 0) {
+            useTerms = true;
+            answer = widget.term.answer;
+          } else {
+            useTerms = false;
+            answer = widget.term.term;
+          }
+          break;
+      }
+      options = multipleOptionMaker(controller, answer!, useTerms);
+    }
+
     // TODO: implement build
     return Padding(
       padding: const EdgeInsets.all(10),
@@ -404,33 +408,82 @@ class _ExamCardMultipleOptionState extends State<ExamCardMultipleOption> {
           ListView.builder(
               padding: const EdgeInsets.all(15),
               shrinkWrap: true,
-              itemCount: options.length,
+              itemCount: options!.length,
               itemBuilder: (context, index) {
-                return ListTile(
-                  enabled: tileEnabled,
-                  tileColor: tileColor,
-                  onTap: () {
-                    tileEnabled = false;
-                    if (answer == options[index]) {
-                      controller.rightTerms.add(widget.term);
-                      tileColor = Colors.green;
-                    } else {
-                      controller.wrongTerms.add(widget.term);
-                      tileColor = Colors.red;
-                    }
-                    setState(() {});
-                    Timer(const Duration(seconds: 1), () {
-                      navigationInExam(
-                          context: context,
-                          controller: controller,
-                          index: widget.indexPageController);
-                    });
-                  },
-                  title: Text(options[index]),
-                );
+                return MultipleOptionTile(
+                    answer: answer!,
+                    options: options!,
+                    index: index,
+                    term: widget.term,
+                    indexPageController: widget.indexPageController);
               })
         ],
       ),
+    );
+  }
+}
+
+class MultipleOptionTile extends StatefulWidget {
+  final String answer;
+  final List<String> options;
+  final int index;
+  final TermModel term;
+  final int indexPageController;
+
+  const MultipleOptionTile(
+      {Key? key,
+      required this.answer,
+      required this.options,
+      required this.index,
+      required this.term,
+      required this.indexPageController})
+      : super(key: key);
+
+  @override
+  State<MultipleOptionTile> createState() => _MultipleOptionTileState();
+}
+
+class _MultipleOptionTileState extends State<MultipleOptionTile> {
+  Color color = secondaryColor;
+  @override
+  Widget build(BuildContext context) {
+    Controller controller = Provider.of<Controller>(context);
+    // TODO: implement build
+    return ListTile(
+      leading: controller.tileStatus
+          ? const SizedBox(
+              width: 1,
+              height: 1,
+            )
+          : Icon(
+              widget.answer == widget.options[widget.index]
+                  ? Icons.check_circle_outlined
+                  : Icons.cancel_outlined,
+              color: controller.tileColor,
+            ),
+      enabled: controller.tileStatus,
+      onTap: () {
+        controller.tileStatus = false;
+        if (widget.answer == widget.options[widget.index]) {
+          controller.tileColor = secondaryColor;
+          controller.rightTerms.add(widget.term);
+        } else {
+          controller.tileColor = Colors.red;
+          setState(() {});
+          controller.wrongTerms.add(widget.term);
+        }
+        controller.notifyNoob();
+
+        Timer(const Duration(seconds: 2), () {
+          controller.tileStatus = true;
+
+          navigationInExam(
+              context: context,
+              controller: controller,
+              index: widget.indexPageController);
+        });
+      },
+      title: Text(widget.options[widget.index]),
     );
   }
 }

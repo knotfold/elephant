@@ -15,6 +15,16 @@ AppBar myAppBar(
       type == 'glossary'
           ? IconButton(
               onPressed: () {
+                showSearch(
+                  context: context,
+                  delegate: CustomSearchDelegate(),
+                );
+              },
+              icon: const Icon(Icons.search))
+          : Container(),
+      type == 'glossary'
+          ? IconButton(
+              onPressed: () {
                 showDialog(
                     context: context,
                     builder: (context) => const DialogStartButton());
