@@ -10,8 +10,8 @@ class CustomSearchDelegate extends SearchDelegate {
     return [];
   }
 
-  @override
-  String get searchFieldLabel => 'Example: Hello';
+  // @override
+  // String get searchFieldLabel => 'Example: Hello';
 
   // Future<List<DocumentSnapshot>> buildSearchList(
   //     List<DocumentSnapshot> documents) async {
@@ -39,45 +39,64 @@ class CustomSearchDelegate extends SearchDelegate {
   Widget buildResults(BuildContext context) {
     Controller controller = Provider.of(context);
 
-    final Stream<QuerySnapshot> _termStream = controller
-        .currentGlossary.documentReference
-        .collection('terms')
-        .orderBy('term', descending: true)
-        .where('term', isEqualTo: query)
-        .snapshots();
+    final Stream<QuerySnapshot> _termStream =
+        controller.currentGlossary.documentReference
+            .collection('terms')
+            .where('term', isEqualTo: query)
+            // .orderBy('term', descending: true)
+            .snapshots();
     if (query.isEmpty || query.trim() == '') {}
 
-    return StreamBuilder<QuerySnapshot>(
-        stream: _termStream,
-        builder: (context, snapshot) {
-          if (snapshot.hasError) {
-            return Container();
-          }
+    return Column(
+      mainAxisSize: MainAxisSize.max,
+      children: [
+        StreamBuilder<QuerySnapshot>(
+            stream: _termStream,
+            builder: (context, snapshot) {
+              if (snapshot.hasError) {
+                print(snapshot.error);
+                return const Center(
+                  child: Text('Error'),
+                );
+              }
 
-          if (!snapshot.hasData) {
-            return Container(
-              child: const CircularProgressIndicator(),
-            );
-          }
-
-          controller.currentGlossaryDocuments = snapshot.data!.docs;
-
-          if (controller.currentGlossaryDocuments.isEmpty) {
-            return Center(
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: const [
-                  Text(
-                    'There is not terms matching the search query',
-                    textAlign: TextAlign.center,
+              if (!snapshot.hasData) {
+                return const Center(
+                  child: Padding(
+                    padding: EdgeInsets.all(25.0),
+                    child: CircularProgressIndicator(),
                   ),
-                ],
-              ),
-            );
-          }
+                );
+              }
 
-          return ListViewBuilderTerms(controller: controller);
-        });
+              controller.currentGlossaryDocuments = snapshot.data!.docs;
+
+              print('there is docs');
+
+              if (controller.currentGlossaryDocuments.isEmpty) {
+                return Center(
+                  child: Column(
+                    mainAxisSize: MainAxisSize.max,
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: const [
+                      Center(
+                        child: Padding(
+                          padding: EdgeInsets.all(25.0),
+                          child: Text(
+                            'There is not terms matching the search query',
+                            textAlign: TextAlign.center,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                );
+              }
+
+              return ListViewBuilderTerms(controller: controller);
+            }),
+      ],
+    );
   }
 
   @override

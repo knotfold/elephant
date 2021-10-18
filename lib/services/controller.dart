@@ -25,6 +25,10 @@ class Controller with ChangeNotifier {
   bool testFromTerms = true;
   bool difficultExam = false;
 
+  bool useFavoriteTerms = false;
+
+  bool isLoading = false;
+
   ExamType examType = ExamType.useTerms;
 
   //lists
@@ -124,30 +128,42 @@ class Controller with ChangeNotifier {
   Stream<QuerySnapshot> queryStreamCreator() {
     Stream<QuerySnapshot> stream;
     if (selectedTags.isEmpty) {
-      stream = currentGlossary.documentReference
-          .collection('terms')
-          .orderBy('term', descending: true)
-          .snapshots();
+      if (useFavoriteTerms) {
+        stream = currentGlossary.documentReference
+            .collection('terms')
+            .where('favoritesList', arrayContains: 'user')
+            .orderBy('term', descending: true)
+            .snapshots()
+            .handleError((onError) {
+          print(onError);
+        });
+      } else {
+        stream = currentGlossary.documentReference
+            .collection('terms')
+            .orderBy('term', descending: true)
+            .snapshots();
+      }
     } else {
-      stream = currentGlossary.documentReference
-          .collection('terms')
-          .where('tag', whereIn: selectedTags)
-          .orderBy('term', descending: true)
-          .snapshots()
-          .handleError((onError) {
-        print(onError);
-      });
-      // switch (selectedTags.length) {
-      //   case 1:
-
-      //     break;
-      //   default:
-      //     stream = currentGlossary.documentReference
-      //         .collection('terms')
-      //         .orderBy('term', descending: true)
-      //         .snapshots();
-      //     break;
-      // }
+      if (useFavoriteTerms) {
+        stream = currentGlossary.documentReference
+            .collection('terms')
+            .where('tag', whereIn: selectedTags)
+            .where('favoritesList', arrayContains: 'user')
+            .orderBy('term', descending: true)
+            .snapshots()
+            .handleError((onError) {
+          //handle error
+        });
+      } else {
+        stream = currentGlossary.documentReference
+            .collection('terms')
+            .where('tag', whereIn: selectedTags)
+            .orderBy('term', descending: true)
+            .snapshots()
+            .handleError((onError) {
+          //handle error
+        });
+      }
     }
 
     return stream;

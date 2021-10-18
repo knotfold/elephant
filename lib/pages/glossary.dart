@@ -136,6 +136,7 @@ class ListViewBuilderTerms extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    Controller controller = Provider.of<Controller>(context);
     return ListView.builder(
       physics: const ScrollPhysics(parent: NeverScrollableScrollPhysics()),
       shrinkWrap: true,
@@ -160,34 +161,72 @@ class ListViewBuilderTerms extends StatelessWidget {
                         });
                   },
                   icon: const Icon(Icons.edit_outlined)),
+              // IconButton(
+              //   onPressed: () {
+              //     showDialog(
+              //         context: context,
+              //         builder: (context) {
+              //           return AlertDialog(
+              //             title: const Text(
+              //                 'Are you sure you want to delete this term?'),
+              //             actions: [
+              //               ElevatedButton(
+              //                   onPressed: () {
+              //                     Navigator.of(context).pop();
+              //                   },
+              //                   child: const Text('Cancel')),
+              //               ElevatedButton(
+              //                   onPressed: () async {
+              //                     await controller
+              //                         .currentGlossaryDocuments[index].reference
+              //                         .delete();
+              //                     Navigator.of(context).pop();
+              //                   },
+              //                   child: const Text('Delete'))
+              //             ],
+              //           );
+              //         });
+              //   },
+              //   icon: const Icon(Icons.delete_forever_rounded),
+              // )
               IconButton(
-                  onPressed: () {
-                    showDialog(
-                        context: context,
-                        builder: (context) {
-                          return AlertDialog(
-                            title: const Text(
-                                'Are you sure you want to delete this term?'),
-                            actions: [
-                              ElevatedButton(
-                                  onPressed: () {
-                                    Navigator.of(context).pop();
-                                  },
-                                  child: const Text('Cancel')),
-                              ElevatedButton(
-                                  onPressed: () async {
-                                    await controller
-                                        .currentGlossaryDocuments[index]
-                                        .reference
-                                        .delete();
-                                    Navigator.of(context).pop();
-                                  },
-                                  child: const Text('Delete'))
-                            ],
-                          );
-                        });
+                  onPressed: () async {
+                    if (controller.isLoading) {
+                      return;
+                    }
+                    controller.isLoading = true;
+                    if (term.isFavorite) {
+                      await term.reference.update({
+                        'favoritesList': FieldValue.arrayRemove(['user'])
+                      }).then((value) {
+                        term.isFavorite = false;
+                        Fluttertoast.showToast(msg: 'Removed from favorites');
+                      }).catchError((onError) {
+                        Fluttertoast.showToast(
+                            msg: 'Error, could not add term');
+                      });
+                    } else {
+                      await term.reference.update({
+                        'favoritesList': FieldValue.arrayUnion(['user'])
+                      }).then((value) {
+                        term.isFavorite = true;
+                        Fluttertoast.showToast(msg: 'Added to favorites');
+                      }).catchError((onError) {
+                        Fluttertoast.showToast(
+                            msg: 'Error, could not add term');
+                      });
+                    }
+
+                    controller.isLoading = false;
+
+                    //Add to favs
                   },
-                  icon: const Icon(Icons.delete_forever_rounded))
+                  icon: Icon(
+                    term.isFavorite ? Icons.star : Icons.star_border,
+                    color: term.isFavorite
+                        ? Colors.amber
+                        : Theme.of(context).colorScheme.onBackground,
+                  ))
             ],
           ),
           leading: Icon(controller.termIconAsignner(term.type)),

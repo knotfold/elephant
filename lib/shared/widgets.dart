@@ -183,9 +183,15 @@ class _FilterListDialogState extends State<FilterListDialog> {
                       style: TextStyle(color: secondaryColor)),
                 ),
                 ElevatedButton(
-                    onPressed: () {},
-                    child: const Text(
-                      'Filter tags',
+                    onPressed: () {
+                      controller.useFavoriteTerms =
+                          controller.useFavoriteTerms ? false : true;
+                      controller.notifyNoob();
+                    },
+                    child: Text(
+                      controller.useFavoriteTerms
+                          ? 'Not Favorites'
+                          : 'Use favorites',
                     ))
               ],
             )

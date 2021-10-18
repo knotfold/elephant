@@ -36,6 +36,8 @@ class TermModel {
   late Type typeEnum;
   late DocumentReference reference;
   late bool difficultTerm;
+  late bool isFavorite;
+  late List<dynamic> favoritesList;
 
   TermModel(this.term, this.answer, this.type, this.tag);
 
@@ -48,6 +50,12 @@ class TermModel {
     typeEnum = Type.values.firstWhere((element) => element.toString() == type);
     reference = ds.reference;
     difficultTerm = data['difficultTerm'] ?? false;
+    favoritesList = data['favoritesList'] ?? [];
+    isFavorite = checkIfFavorite(favoritesList, 'user');
+  }
+
+  bool checkIfFavorite(List<dynamic> list, String user) {
+    return list.contains('user');
   }
 
   Map<String, dynamic> toMap() {
