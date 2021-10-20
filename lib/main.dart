@@ -38,7 +38,8 @@ class MyApp extends StatelessWidget {
         ExamPage.routeName: (context) => const ExamPage(),
         ExamResultPage.routeName: (context) => const ExamResultPage(),
         '/glossaryPage': (context) => const GlossaryPage(),
-        '/difficultTermsPage': (context) => DifficultTermsPage()
+        '/difficultTermsPage': (context) => const DifficultTermsPage(),
+        '/filterGlossaryTermsPage': (context) => const FilterGlossaryTermsPage()
       },
     );
   }

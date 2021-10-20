@@ -32,93 +32,101 @@ class GlossaryPage extends StatelessWidget {
         .orderBy('term', descending: true)
         .snapshots();
 
-    return Scaffold(
-      floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
-      floatingActionButton: Padding(
-        padding: const EdgeInsets.all(15.0),
-        child: Stack(
-          fit: StackFit.loose,
-          children: <Widget>[
-            Align(
-              alignment: Alignment.bottomLeft,
-              child: FloatingActionButton(
-                heroTag: 'difficultTerms',
-                onPressed: () {
-                  navigateToDifficultTerms(context, controller);
-                },
-                child: const Icon(Icons.healing_rounded),
+    return WillPopScope(
+      onWillPop: () async {
+        controller.selectedTags.clear();
+        controller.useFavoriteTerms = false;
+        return true;
+      },
+      child: Scaffold(
+        floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
+        floatingActionButton: Padding(
+          padding: const EdgeInsets.all(15.0),
+          child: Stack(
+            fit: StackFit.loose,
+            children: <Widget>[
+              Align(
+                alignment: Alignment.bottomLeft,
+                child: FloatingActionButton(
+                  heroTag: 'difficultTerms',
+                  onPressed: () {
+                    navigateToDifficultTerms(context, controller);
+                  },
+                  child: const Icon(Icons.healing_rounded),
+                ),
               ),
-            ),
-            Align(
-              alignment: Alignment.bottomRight,
-              child: FloatingActionButton.extended(
-                heroTag: 'addNewTerms',
-                onPressed: () {
-                  showDialog(
-                    context: context,
-                    builder: (context) => DialogAddNewTerm(
-                      glossaryModel: controller.currentGlossary,
-                      term: TermModel(
-                          '', '', Type.values.first.toString(), 'untagged'),
-                      emptyTerm: true,
-                    ),
-                  );
-                },
-                label: const Text('New term'),
-                icon: const Icon(Icons.add_circle_outline),
-              ),
-            ),
-          ],
-        ),
-      ),
-      appBar: myAppBar(
-          title: controller.currentGlossary.name,
-          context: context,
-          type: 'glossary'),
-      body: SingleChildScrollView(
-        child: Padding(
-          padding: const EdgeInsets.all(10.0),
-          child: Column(
-            mainAxisSize: MainAxisSize.max,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                'Terms',
-                style: textStyleHeadline,
-              ),
-              StreamBuilder<QuerySnapshot>(
-                stream: controller.queryStreamCreator(),
-                builder: (context, snapshot) {
-                  //TODO: display error
-                  if (snapshot.hasError) {
-                    return Container();
-                  }
-                  //TODO: display error
-                  if (!snapshot.hasData) {
-                    return Container(
-                      child: const CircularProgressIndicator(),
-                    );
-                  }
-
-                  controller.currentGlossaryDocuments = snapshot.data!.docs;
-                  if (controller.currentGlossaryDocuments.isEmpty) {
-                    return Center(
-                      child: Column(
-                        mainAxisSize: MainAxisSize.min,
-                        children: const [
-                          Text(
-                            'This glossary does not contain any terms, would you like to add some to it? Click the add button down below',
-                            textAlign: TextAlign.center,
-                          ),
-                        ],
+              Align(
+                alignment: Alignment.bottomRight,
+                child: FloatingActionButton.extended(
+                  heroTag: 'addNewTerms',
+                  onPressed: () {
+                    showDialog(
+                      context: context,
+                      builder: (context) => DialogAddNewTerm(
+                        glossaryModel: controller.currentGlossary,
+                        term: TermModel(
+                            '', '', Type.values.first.toString(), 'untagged'),
+                        emptyTerm: true,
                       ),
                     );
-                  }
-
-                  return ListViewBuilderTerms(controller: controller);
-                },
+                  },
+                  label: const Text('New term'),
+                  icon: const Icon(Icons.add_circle_outline),
+                ),
               ),
             ],
+          ),
+        ),
+        appBar: myAppBar(
+            title: controller.currentGlossary.name,
+            context: context,
+            type: 'glossary'),
+        body: SingleChildScrollView(
+          child: Padding(
+            padding: const EdgeInsets.all(10.0),
+            child: Column(
+              mainAxisSize: MainAxisSize.max,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Terms',
+                  style: textStyleHeadline,
+                ),
+                StreamBuilder<QuerySnapshot>(
+                  stream: controller.queryStreamCreator(),
+                  builder: (context, snapshot) {
+                    //TODO: display error
+                    if (snapshot.hasError) {
+                      return Container();
+                    }
+                    //TODO: display error
+                    if (!snapshot.hasData) {
+                      return Container(
+                        child: const CircularProgressIndicator(),
+                      );
+                    }
+
+                    controller.currentGlossaryDocuments = snapshot.data!.docs;
+
+                    if (controller.currentGlossaryDocuments.isEmpty) {
+                      return Center(
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          children: const [
+                            Text(
+                              'This glossary does not contain any terms, would you like to add some to it? Click the add button down below',
+                              textAlign: TextAlign.center,
+                            ),
+                          ],
+                        ),
+                      );
+                    }
+
+                    return ListViewBuilderTerms(controller: controller);
+                  },
+                ),
+              ],
+            ),
           ),
         ),
       ),
@@ -137,6 +145,7 @@ class ListViewBuilderTerms extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     Controller controller = Provider.of<Controller>(context);
+
     return ListView.builder(
       physics: const ScrollPhysics(parent: NeverScrollableScrollPhysics()),
       shrinkWrap: true,
@@ -271,9 +280,11 @@ class _DialogStartButtonState extends State<DialogStartButton> {
               : ElevatedButton(
                   onPressed: () {
                     controller.selectedTags.clear();
+                    controller.useFavoriteTerms = false;
                     controller.notifyNoob();
+                    setState(() {});
                   },
-                  child: const Text('Clear tags')),
+                  child: const Text('Clear filters')),
           const SizedBox(
             height: 25,
           ),
@@ -599,9 +610,11 @@ class _DialogAddNewTermState extends State<DialogAddNewTerm> {
                                     });
                                     if (!emptyTerm) {
                                       widget.term.term =
-                                          textEditingControllerTerm.text;
+                                          textEditingControllerTerm.text
+                                              .capitalize();
                                       widget.term.answer =
-                                          textEditingControllerAnswer.text;
+                                          textEditingControllerAnswer.text
+                                              .capitalize();
                                       widget.term.type = dropdownValue;
                                       widget.term.tag = dropdownValueTags;
 
@@ -642,6 +655,12 @@ class _DialogAddNewTermState extends State<DialogAddNewTerm> {
     );
   }
 
+  String captilize(String string) {
+    string.replaceRange(1, 1, string.characters.first.toUpperCase());
+
+    return "${string[0].toUpperCase()}${string.substring(1)}";
+  }
+
   Color dropDownTextColor() {
     return Theme.of(context).brightness == Brightness.dark
         ? Colors.white
@@ -651,8 +670,8 @@ class _DialogAddNewTermState extends State<DialogAddNewTerm> {
   Future addNewTerm(CollectionReference termsCollectionRef) async {
     await termsCollectionRef
         .add({
-          'term': termName,
-          'answer': termAnswer,
+          'term': termName.capitalize(),
+          'answer': termAnswer.capitalize(),
           'type': dropdownValue,
           'tag': dropdownValueTags,
         })

@@ -42,7 +42,7 @@ class CustomSearchDelegate extends SearchDelegate {
     final Stream<QuerySnapshot> _termStream =
         controller.currentGlossary.documentReference
             .collection('terms')
-            .where('term', isEqualTo: query)
+            .where('term', isEqualTo: query.capitalize())
             // .orderBy('term', descending: true)
             .snapshots();
     if (query.isEmpty || query.trim() == '') {}

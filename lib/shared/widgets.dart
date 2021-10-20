@@ -34,11 +34,7 @@ AppBar myAppBar(
       type == 'glossary'
           ? IconButton(
               onPressed: () {
-                showDialog(
-                    context: context,
-                    builder: (context) {
-                      return const FilterListDialog();
-                    });
+                Navigator.of(context).pushNamed('/filterGlossaryTermsPage');
               },
               icon: const Icon(Icons.filter_list))
           : Container(),
@@ -69,141 +65,8 @@ navigateToDifficultExam(
       ));
 }
 
-class FilterListDialog extends StatefulWidget {
-  const FilterListDialog({Key? key}) : super(key: key);
-
-  @override
-  State<FilterListDialog> createState() => _FilterListDialogState();
-}
-
-class _FilterListDialogState extends State<FilterListDialog> {
-  final formKey = GlobalKey<FormState>();
-  TextEditingController textEditingController = TextEditingController();
-  late String tagName;
-
-  @override
-  Widget build(BuildContext context) {
-    final titleTextStyle = Theme.of(context).textTheme.headline6;
-    final subtitleTextStyle = Theme.of(context).textTheme.subtitle1;
-    Controller controller =
-        Provider.of<Controller>(context); // TODO: implement build
-    return Dialog(
-      child: Padding(
-        padding: const EdgeInsets.all(15.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          mainAxisSize: MainAxisSize.min,
-          // titleTextStyle: titleTextStyle,
-          children: [
-            Text(
-              'Filter glossary',
-              style: titleTextStyle,
-            ),
-            const SizedBox(
-              height: 15,
-            ),
-            Text(
-              'Tags:',
-              style: subtitleTextStyle,
-            ),
-            controller.currentGlossary.tags.isEmpty
-                ? const Text(
-                    'Currently your glossary does not contain any tags, start by adding a tag on the button below')
-                : ChecBoxListTags(controller: controller),
-            ButtonBar(
-              children: [
-                OutlinedButton(
-                  onPressed: () {
-                    showDialog(
-                        context: context,
-                        builder: (context) {
-                          return SimpleDialog(
-                            titlePadding: const EdgeInsets.all(20),
-                            title: const Text('Add a new tag'),
-                            contentPadding: const EdgeInsets.all(15),
-                            children: [
-                              Form(
-                                key: formKey,
-                                child: Column(
-                                  children: [
-                                    TextFormField(
-                                      decoration: const InputDecoration(
-                                        label: Text('Tag name'),
-                                      ),
-                                      validator: (value) {
-                                        if (value == null) {
-                                          return 'Please add a name to the tag';
-                                        }
-                                      },
-                                      onSaved: (value) {
-                                        tagName = value!;
-                                      },
-                                      controller: textEditingController,
-                                    ),
-                                    ButtonBar(
-                                      children: [
-                                        ElevatedButton(
-                                          onPressed: () async {
-                                            if (!formKey.currentState!
-                                                .validate()) {
-                                              return;
-                                            }
-
-                                            formKey.currentState!.save();
-                                            await controller.currentGlossary
-                                                .documentReference
-                                                .update({
-                                              'tags': FieldValue.arrayUnion(
-                                                  [tagName])
-                                            }).then((value) {
-                                              Navigator.of(context).pop();
-                                              //Display query succeded
-                                              Fluttertoast.showToast(
-                                                  msg: 'Tag succesfully added',
-                                                  toastLength:
-                                                      Toast.LENGTH_LONG);
-                                              //At the tag to the momentary state of the current glossary
-                                              controller.currentGlossary.tags
-                                                  .add(tagName);
-                                              controller.notifyNoob();
-                                            });
-                                          },
-                                          child: const Text('New Tag'),
-                                        )
-                                      ],
-                                    ),
-                                  ],
-                                ),
-                              )
-                            ],
-                          );
-                        });
-                  },
-                  child: const Text('Add new tag',
-                      style: TextStyle(color: secondaryColor)),
-                ),
-                ElevatedButton(
-                    onPressed: () {
-                      controller.useFavoriteTerms =
-                          controller.useFavoriteTerms ? false : true;
-                      controller.notifyNoob();
-                    },
-                    child: Text(
-                      controller.useFavoriteTerms
-                          ? 'Not Favorites'
-                          : 'Use favorites',
-                    ))
-              ],
-            )
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-class ChecBoxListTags extends StatelessWidget {
-  const ChecBoxListTags({
+class CheckBoxListTags extends StatelessWidget {
+  const CheckBoxListTags({
     Key? key,
     required this.controller,
   }) : super(key: key);
@@ -213,6 +76,7 @@ class ChecBoxListTags extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return ListView.builder(
+        physics: const NeverScrollableScrollPhysics(),
         shrinkWrap: true,
         itemCount: controller.currentGlossary.tags.length,
         itemBuilder: (context, index) {
