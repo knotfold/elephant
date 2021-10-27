@@ -1,7 +1,7 @@
 import 'package:firebase_core/firebase_core.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 
-enum Type { verb, adverd, noun, phrase }
+enum Type { verb, adverd, noun, phrase, adjective }
 
 class User {
   late String username;

@@ -67,6 +67,12 @@ class _FilterGlossaryTermsPageState extends State<FilterGlossaryTermsPage> {
                                       ),
                                       ButtonBar(
                                         children: [
+                                          OutlinedButton(
+                                            onPressed: () {
+                                              Navigator.of(context).pop();
+                                            },
+                                            child: const Text('Cancel'),
+                                          ),
                                           ElevatedButton(
                                             onPressed: () async {
                                               if (!formKey.currentState!
@@ -95,7 +101,7 @@ class _FilterGlossaryTermsPageState extends State<FilterGlossaryTermsPage> {
                                               });
                                             },
                                             child: const Text('New Tag'),
-                                          )
+                                          ),
                                         ],
                                       ),
                                     ],
@@ -105,20 +111,33 @@ class _FilterGlossaryTermsPageState extends State<FilterGlossaryTermsPage> {
                             );
                           });
                     },
-                    child: const Text('Add new tag',
-                        style: TextStyle(color: secondaryColor)),
+                    child: const Text(
+                      'Add new tag',
+                    ),
+                  ),
+                  const SizedBox(
+                    width: 2,
                   ),
                   ElevatedButton(
-                      onPressed: () {
-                        controller.useFavoriteTerms =
-                            controller.useFavoriteTerms ? false : true;
-                        controller.notifyNoob();
-                      },
-                      child: Text(
-                        controller.useFavoriteTerms
-                            ? 'Not Favorites'
-                            : 'Use favorites',
-                      ))
+                    onPressed: () {
+                      controller.useFavoriteTerms =
+                          controller.useFavoriteTerms ? false : true;
+                      controller.notifyNoob();
+                    },
+                    child: Text(
+                      controller.useFavoriteTerms
+                          ? 'Not Favorites'
+                          : 'Use favorites',
+                    ),
+                  ),
+                  Icon(
+                    controller.useFavoriteTerms
+                        ? Icons.star
+                        : Icons.star_border,
+                    color: controller.useFavoriteTerms
+                        ? Colors.amber
+                        : Theme.of(context).colorScheme.onBackground,
+                  )
                 ],
               ),
               const SizedBox(

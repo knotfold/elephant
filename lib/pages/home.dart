@@ -144,6 +144,12 @@ class _DialogAddNewGlossaryState extends State<DialogAddNewGlossary> {
                     ? const CircularProgressIndicator()
                     : ButtonBar(
                         children: [
+                          OutlinedButton(
+                            onPressed: () {
+                              Navigator.of(context).pop();
+                            },
+                            child: const Text('Cancel'),
+                          ),
                           ElevatedButton(
                             onPressed: () async {
                               if (!formKey.currentState!.validate()) {

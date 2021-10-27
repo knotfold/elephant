@@ -1,5 +1,6 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:elephant/services/services.dart';
+import 'package:elephant/shared/colors.dart';
 import 'package:flutter/material.dart';
 import 'package:elephant/pages/pages.dart';
 import 'package:provider/provider.dart';
@@ -23,6 +24,21 @@ class CustomSearchDelegate extends SearchDelegate {
   //   });
   //   return filteredDocuments;
   // }
+  @override
+  ThemeData appBarTheme(BuildContext context) {
+    final ThemeData theme = Theme.of(context);
+    return theme.copyWith(
+        primaryColor: primary,
+        primaryIconTheme: theme.iconTheme,
+        primaryColorBrightness: theme.primaryColorBrightness,
+        primaryTextTheme: theme.primaryTextTheme,
+        highlightColor: secondaryColor,
+        textSelectionTheme: TextSelectionThemeData(cursorColor: secondaryColor),
+        inputDecorationTheme: InputDecorationTheme(
+            focusColor: secondaryColor,
+            helperStyle: TextStyle(color: secondaryColor)),
+        textTheme: theme.textTheme.copyWith());
+  }
 
   @override
   Widget? buildLeading(BuildContext context) {
@@ -78,16 +94,33 @@ class CustomSearchDelegate extends SearchDelegate {
                   child: Column(
                     mainAxisSize: MainAxisSize.max,
                     mainAxisAlignment: MainAxisAlignment.center,
-                    children: const [
-                      Center(
+                    children: [
+                      const Center(
                         child: Padding(
                           padding: EdgeInsets.all(25.0),
                           child: Text(
-                            'There is not terms matching the search query',
+                            'There is not terms matching the search query, click the button below to add the current search as a new term',
                             textAlign: TextAlign.center,
                           ),
                         ),
                       ),
+                      IconButton(
+                          onPressed: () {
+                            Navigator.of(context).pop();
+                            showDialog(
+                                context: context,
+                                builder: (context) {
+                                  return DialogAddNewTerm(
+                                      glossaryModel: controller.currentGlossary,
+                                      term: TermModel(
+                                          query,
+                                          '',
+                                          Type.values.first.toString(),
+                                          'untagged'),
+                                      emptyTerm: true);
+                                });
+                          },
+                          icon: const Icon(Icons.add_circle_outline))
                     ],
                   ),
                 );

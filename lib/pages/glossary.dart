@@ -8,8 +8,6 @@ import 'package:provider/provider.dart';
 import 'package:fluttertoast/fluttertoast.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 
-enum Type { verb, adverd, noun, phrase }
-
 // ignore: must_be_immutable
 class GlossaryPage extends StatelessWidget {
   const GlossaryPage({
@@ -113,9 +111,12 @@ class GlossaryPage extends StatelessWidget {
                         child: Column(
                           mainAxisSize: MainAxisSize.min,
                           children: const [
-                            Text(
-                              'This glossary does not contain any terms, would you like to add some to it? Click the add button down below',
-                              textAlign: TextAlign.center,
+                            Padding(
+                              padding: EdgeInsets.all(8.0),
+                              child: Text(
+                                'This glossary does not contain any terms at all or with the current applied filters, would you like to add some to it? Click the add button down below',
+                                textAlign: TextAlign.center,
+                              ),
                             ),
                           ],
                         ),
@@ -198,44 +199,7 @@ class ListViewBuilderTerms extends StatelessWidget {
               //   },
               //   icon: const Icon(Icons.delete_forever_rounded),
               // )
-              IconButton(
-                  onPressed: () async {
-                    if (controller.isLoading) {
-                      return;
-                    }
-                    controller.isLoading = true;
-                    if (term.isFavorite) {
-                      await term.reference.update({
-                        'favoritesList': FieldValue.arrayRemove(['user'])
-                      }).then((value) {
-                        term.isFavorite = false;
-                        Fluttertoast.showToast(msg: 'Removed from favorites');
-                      }).catchError((onError) {
-                        Fluttertoast.showToast(
-                            msg: 'Error, could not add term');
-                      });
-                    } else {
-                      await term.reference.update({
-                        'favoritesList': FieldValue.arrayUnion(['user'])
-                      }).then((value) {
-                        term.isFavorite = true;
-                        Fluttertoast.showToast(msg: 'Added to favorites');
-                      }).catchError((onError) {
-                        Fluttertoast.showToast(
-                            msg: 'Error, could not add term');
-                      });
-                    }
-
-                    controller.isLoading = false;
-
-                    //Add to favs
-                  },
-                  icon: Icon(
-                    term.isFavorite ? Icons.star : Icons.star_border,
-                    color: term.isFavorite
-                        ? Colors.amber
-                        : Theme.of(context).colorScheme.onBackground,
-                  ))
+              IconButtonFavoriteTerm(controller: controller, term: term)
             ],
           ),
           leading: Icon(controller.termIconAsignner(term.type)),
@@ -244,6 +208,60 @@ class ListViewBuilderTerms extends StatelessWidget {
         );
       },
     );
+  }
+}
+
+class IconButtonFavoriteTerm extends StatelessWidget {
+  const IconButtonFavoriteTerm({
+    Key? key,
+    required this.controller,
+    required this.term,
+  }) : super(key: key);
+
+  final Controller controller;
+  final TermModel term;
+
+  @override
+  Widget build(BuildContext context) {
+    return IconButton(
+        onPressed: () async {
+          if (controller.isLoading) {
+            return;
+          }
+          controller.isLoading = true;
+          if (term.isFavorite) {
+            await term.reference.update({
+              'favoritesList': FieldValue.arrayRemove(['user'])
+            }).then((value) {
+              term.isFavorite = false;
+              Fluttertoast.showToast(msg: 'Removed from favorites');
+            }).catchError((onError) {
+              Fluttertoast.showToast(msg: 'Error, could not add term');
+            });
+          } else {
+            await term.reference.update({
+              'favoritesList': FieldValue.arrayUnion(['user'])
+            }).then((value) {
+              term.isFavorite = true;
+              Fluttertoast.showToast(msg: 'Added to favorites');
+            }).catchError((onError) {
+              Fluttertoast.showToast(msg: 'Error, could not add term');
+            });
+          }
+
+          controller.isLoading = false;
+          //
+          controller.updateStar = true;
+          controller.notifyNoob();
+
+          //Add to favs
+        },
+        icon: Icon(
+          term.isFavorite ? Icons.star : Icons.star_border,
+          color: term.isFavorite
+              ? Colors.amber
+              : Theme.of(context).colorScheme.onBackground,
+        ));
   }
 }
 
@@ -260,122 +278,142 @@ class _DialogStartButtonState extends State<DialogStartButton> {
     Controller controller = Provider.of<Controller>(context);
     final textStyleTheme = Theme.of(context).textTheme.headline6;
     return Dialog(
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(15),
+        ),
         child: Padding(
-      padding: const EdgeInsets.all(30.0),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Text(
-            'Select an option',
-            style: textStyleTheme,
-          ),
-          const SizedBox(height: 30),
-          controller.selectedTags.isEmpty
-              ? Container()
-              : const Text(
-                  'Exam and flash cards will start with the currently applied filters, click the button to clear the tags and use all the terms'),
-          controller.selectedTags.isEmpty
-              ? Container()
-              : ElevatedButton(
-                  onPressed: () {
-                    controller.selectedTags.clear();
-                    controller.useFavoriteTerms = false;
-                    controller.notifyNoob();
-                    setState(() {});
-                  },
-                  child: const Text('Clear filters')),
-          const SizedBox(
-            height: 25,
-          ),
+          padding: const EdgeInsets.all(30.0),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                'Select an option',
+                style: textStyleTheme,
+              ),
+              const SizedBox(height: 30),
+              controller.selectedTags.isEmpty
+                  ? Container()
+                  : const Text(
+                      'Exam and flash cards will start with the currently applied filters, click the button to clear the tags and use all the terms'),
+              controller.selectedTags.isEmpty
+                  ? Container()
+                  : ElevatedButton(
+                      onPressed: () {
+                        controller.selectedTags.clear();
+                        controller.useFavoriteTerms = false;
+                        controller.notifyNoob();
+                        setState(() {});
+                      },
+                      child: const Text('Clear filters')),
+              const SizedBox(
+                height: 25,
+              ),
 
-          //old switch selector
-          // Row(
-          //   mainAxisAlignment: MainAxisAlignment.center,
-          //   children: [
-          //     Text(
-          //       'No',
-          //       style: TextStyle(
-          //           color: controller.useFilteredTerms ? pLight : Colors.black),
-          //     ),
-          //     Switch(
-          //         value: controller.useFilteredTerms,
-          //         onChanged: (onChanged) {
-          //           controller.useFilteredTerms = onChanged;
-          //           setState(() {});
-          //         }),
-          //     Text(
-          //       'Yes',
-          //       style: TextStyle(
-          //           color: controller.useFilteredTerms ? Colors.black : pLight),
-          //     ),
-          //   ],
-          // ),
+              //old switch selector
+              // Row(
+              //   mainAxisAlignment: MainAxisAlignment.center,
+              //   children: [
+              //     Text(
+              //       'No',
+              //       style: TextStyle(
+              //           color: controller.useFilteredTerms ? pLight : Colors.black),
+              //     ),
+              //     Switch(
+              //         value: controller.useFilteredTerms,
+              //         onChanged: (onChanged) {
+              //           controller.useFilteredTerms = onChanged;
+              //           setState(() {});
+              //         }),
+              //     Text(
+              //       'Yes',
+              //       style: TextStyle(
+              //           color: controller.useFilteredTerms ? Colors.black : pLight),
+              //     ),
+              //   ],
+              // ),
 
-          const Text('Select the question and answer configuration'),
-          // Row(
-          //   crossAxisAlignment: CrossAxisAlignment.stretch,
-          //   mainAxisSize: MainAxisSize.min,
-          //   mainAxisAlignment: MainAxisAlignment.center,
-          //   children: [
-          RadioListTile<ExamType>(
-            title: const Text('Use Terms'),
-            value: ExamType.useTerms,
-            groupValue: controller.examType,
-            onChanged: (ExamType? value) {
-              setState(() {
-                controller.examType = value!;
-              });
-            },
-          ),
+              const Text('Select the question and answer configuration'),
+              // Row(
+              //   crossAxisAlignment: CrossAxisAlignment.stretch,
+              //   mainAxisSize: MainAxisSize.min,
+              //   mainAxisAlignment: MainAxisAlignment.center,
+              //   children: [
+              RadioListTile<ExamType>(
+                title: const Text('Use Terms'),
+                value: ExamType.useTerms,
+                groupValue: controller.examType,
+                onChanged: (ExamType? value) {
+                  setState(() {
+                    controller.examType = value!;
+                  });
+                },
+              ),
 
-          RadioListTile<ExamType>(
-            title: const Text('Use Answers'),
-            value: ExamType.useAnswers,
-            groupValue: controller.examType,
-            onChanged: (ExamType? value) {
-              setState(() {
-                controller.examType = value!;
-              });
-            },
-          ),
+              RadioListTile<ExamType>(
+                title: const Text('Use Answers'),
+                value: ExamType.useAnswers,
+                groupValue: controller.examType,
+                onChanged: (ExamType? value) {
+                  setState(() {
+                    controller.examType = value!;
+                  });
+                },
+              ),
 
-          RadioListTile<ExamType>(
-            title: const Text('Mixed'),
-            value: ExamType.mixed,
-            groupValue: controller.examType,
-            onChanged: (ExamType? value) {
-              setState(() {
-                controller.examType = value!;
-              });
-            },
-          ),
-          //   ],
-          // ),
+              RadioListTile<ExamType>(
+                title: const Text('Mixed'),
+                value: ExamType.mixed,
+                groupValue: controller.examType,
+                onChanged: (ExamType? value) {
+                  setState(() {
+                    controller.examType = value!;
+                  });
+                },
+              ),
+              //   ],
+              // ),
 
-          const SizedBox(
-            height: 20,
-          ),
-          ElevatedButton(
-            onPressed: () {
-              if (controller.currentGlossaryDocuments.isEmpty) {
-                Fluttertoast.showToast(
-                    msg:
-                        'There is not terms in the current glossary or with the applied filters');
-                return;
-              }
-              navigateToExam(
-                'exam',
-                context,
-                controller,
-              );
-            },
-            child: const Text('Open Question Exam'),
-          ),
+              const SizedBox(
+                height: 20,
+              ),
+              ElevatedButton(
+                onPressed: () {
+                  if (controller.currentGlossaryDocuments.isEmpty) {
+                    Fluttertoast.showToast(
+                        msg:
+                            'There is not terms in the current glossary or with the applied filters');
+                    return;
+                  }
+                  navigateToExam(
+                    'exam',
+                    context,
+                    controller,
+                  );
+                },
+                child: const Text('Open Question Exam'),
+              ),
 
-          controller.currentGlossaryDocuments.length < 4
-              ? Container()
-              : ElevatedButton(
+              controller.currentGlossaryDocuments.length < 4
+                  ? Container()
+                  : ElevatedButton(
+                      onPressed: () {
+                        if (controller.currentGlossaryDocuments.isEmpty) {
+                          Fluttertoast.showToast(
+                              msg:
+                                  'There is not terms in the current glossary or with the applied filters');
+                          return;
+                        }
+                        navigateToExam(
+                          'multipleOption',
+                          context,
+                          controller,
+                        );
+                      },
+                      child: const Text('Multiple Option Exam'),
+                    ),
+
+              ElevatedButton(
                   onPressed: () {
                     if (controller.currentGlossaryDocuments.isEmpty) {
                       Fluttertoast.showToast(
@@ -384,32 +422,21 @@ class _DialogStartButtonState extends State<DialogStartButton> {
                       return;
                     }
                     navigateToExam(
-                      'multipleOption',
+                      'flashCards',
                       context,
                       controller,
                     );
                   },
-                  child: const Text('Multiple Option Exam'),
-                ),
-
-          ElevatedButton(
-              onPressed: () {
-                if (controller.currentGlossaryDocuments.isEmpty) {
-                  Fluttertoast.showToast(
-                      msg:
-                          'There is not terms in the current glossary or with the applied filters');
-                  return;
-                }
-                navigateToExam(
-                  'flashCards',
-                  context,
-                  controller,
-                );
-              },
-              child: const Text('Flash Cards'))
-        ],
-      ),
-    ));
+                  child: const Text('Flash Cards')),
+              OutlinedButton(
+                onPressed: () {
+                  Navigator.of(context).pop();
+                },
+                child: const Text('Cancel'),
+              ),
+            ],
+          ),
+        ));
   }
 }
 
@@ -453,6 +480,8 @@ class _DialogAddNewTermState extends State<DialogAddNewTerm> {
   late String termType;
   late bool emptyTerm = widget.emptyTerm;
 
+  bool favorite = false;
+
   String tag = 'untagged';
 
   @override
@@ -467,7 +496,7 @@ class _DialogAddNewTermState extends State<DialogAddNewTerm> {
     CollectionReference termsCollectionRef =
         widget.glossaryModel.documentReference.collection('terms');
 
-    final textThemeTilte = Theme.of(context).textTheme.headline4;
+    final textThemeTilte = Theme.of(context).textTheme.headline5;
 
     return Dialog(
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
@@ -481,7 +510,7 @@ class _DialogAddNewTermState extends State<DialogAddNewTerm> {
               mainAxisSize: MainAxisSize.min,
               children: [
                 Text(
-                  'Add a new term',
+                  emptyTerm ? 'Add a new term' : 'Edit term',
                   style: textThemeTilte,
                 ),
                 Padding(
@@ -599,6 +628,30 @@ class _DialogAddNewTermState extends State<DialogAddNewTerm> {
                           ? const CircularProgressIndicator()
                           : ButtonBar(
                               children: [
+                                OutlinedButton(
+                                  onPressed: () {
+                                    Navigator.of(context).pop();
+                                  },
+                                  child: const Text('Cancel'),
+                                ),
+                                emptyTerm
+                                    ? IconButton(
+                                        onPressed: () {
+                                          setState(() {
+                                            favorite = favorite ? false : true;
+                                          });
+                                        },
+                                        icon: Icon(
+                                          favorite
+                                              ? Icons.star
+                                              : Icons.star_border,
+                                          color: favorite
+                                              ? Colors.amber
+                                              : Theme.of(context)
+                                                  .colorScheme
+                                                  .onBackground,
+                                        ))
+                                    : Container(),
                                 ElevatedButton(
                                   onPressed: () async {
                                     if (!formKey.currentState!.validate()) {
@@ -674,6 +727,9 @@ class _DialogAddNewTermState extends State<DialogAddNewTerm> {
           'answer': termAnswer.capitalize(),
           'type': dropdownValue,
           'tag': dropdownValueTags,
+          'favoritesList': favorite
+              ? FieldValue.arrayUnion(['user'])
+              : FieldValue.arrayUnion([])
         })
         .then((value) => Fluttertoast.showToast(msg: 'Added a new term'))
         .catchError((onError) =>

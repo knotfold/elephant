@@ -46,6 +46,13 @@ class GalleryThemeData {
       scaffoldBackgroundColor: colorScheme.background,
       highlightColor: Colors.transparent,
       focusColor: focusColor,
+      outlinedButtonTheme: OutlinedButtonThemeData(
+        style: ButtonStyle(
+          foregroundColor: MaterialStateProperty.all<Color>(
+            colorScheme.secondary,
+          ),
+        ),
+      ),
 
       inputDecorationTheme: InputDecorationTheme(
           labelStyle: TextStyle(

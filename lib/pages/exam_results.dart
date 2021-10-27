@@ -110,6 +110,9 @@ class ExamResultPage extends StatelessWidget {
                           ),
                         ],
                       ),
+                      const SizedBox(
+                        height: 5,
+                      ),
                       ListView.builder(
                           physics: const NeverScrollableScrollPhysics(),
                           shrinkWrap: true,
@@ -123,6 +126,9 @@ class ExamResultPage extends StatelessWidget {
                               subtitle: Text(term.answer),
                             );
                           }),
+                      const SizedBox(
+                        height: 25,
+                      ),
                       Row(
                         crossAxisAlignment: CrossAxisAlignment.center,
                         mainAxisAlignment: MainAxisAlignment.center,
@@ -139,6 +145,9 @@ class ExamResultPage extends StatelessWidget {
                             style: textStyle1,
                           ),
                         ],
+                      ),
+                      const SizedBox(
+                        height: 5,
                       ),
                       ListView.builder(
                           physics: const NeverScrollableScrollPhysics(),

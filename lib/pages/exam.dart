@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:math';
 
 import 'package:elephant/pages/exam_results.dart';
+import 'package:elephant/pages/pages.dart';
 import 'package:elephant/services/controller.dart';
 import 'package:flutter/material.dart';
 import 'package:elephant/shared/shared.dart';
@@ -41,7 +42,9 @@ class _ExamPageState extends State<ExamPage> {
       },
       child: Scaffold(
         appBar: AppBar(
-          title: Text(args.examType.toUpperCase()),
+          title: Text(
+            args.examType.toUpperCase(),
+          ),
         ),
         body: PageView.builder(
             itemCount: termsList.length,
@@ -131,9 +134,16 @@ class _FlashCardState extends State<FlashCard> {
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Icon(
-                    controller.termIconAsignner(widget.term.type),
-                    size: 40,
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(
+                        controller.termIconAsignner(widget.term.type),
+                        size: 40,
+                      ),
+                      IconButtonFavoriteTerm(
+                          controller: controller, term: widget.term)
+                    ],
                   ),
                   const SizedBox(
                     height: 15,
@@ -208,80 +218,89 @@ class _ExamCardState extends State<ExamCard> {
     Controller controller = Provider.of<Controller>(context);
     final textStyleAnswer = Theme.of(context).textTheme.headline3;
     // TODO: implement build
-    return Padding(
-      padding: const EdgeInsets.all(20.0),
-      child: Form(
-        key: formKey,
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            const Icon(Icons.face_rounded),
-            const SizedBox(
-              height: 15,
-            ),
-            Text(widget.term.term),
-            const SizedBox(
-              height: 15,
-            ),
-            TextFormField(
-              enabled: mistakeCounter < 3,
-              validator: (value) {
-                if (value == '') {
-                  return 'Write an answer';
-                }
-                if (value!.trim().toLowerCase() !=
-                        widget.term.answer.trim().toLowerCase() &&
-                    mistakeCounter < 3) {
-                  mistakeCounter++;
-                  setState(() {});
+    return SingleChildScrollView(
+      child: Padding(
+        padding: const EdgeInsets.all(20.0),
+        child: Form(
+          key: formKey,
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  const Icon(Icons.face_rounded),
+                  IconButtonFavoriteTerm(
+                      controller: controller, term: widget.term),
+                ],
+              ),
+              const SizedBox(
+                height: 15,
+              ),
+              Text(widget.term.term),
+              const SizedBox(
+                height: 15,
+              ),
+              TextFormField(
+                enabled: mistakeCounter < 3,
+                validator: (value) {
+                  if (value == '') {
+                    return 'Write an answer';
+                  }
+                  if (value!.trim().toLowerCase() !=
+                          widget.term.answer.trim().toLowerCase() &&
+                      mistakeCounter < 3) {
+                    mistakeCounter++;
+                    setState(() {});
 
-                  return 'Wrong answer';
-                }
-              },
-              controller: textEditingController,
-              decoration: const InputDecoration(
-                labelText: 'Answer',
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.all(
-                    Radius.circular(10),
+                    return 'Wrong answer';
+                  }
+                },
+                controller: textEditingController,
+                decoration: const InputDecoration(
+                  labelText: 'Answer',
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.all(
+                      Radius.circular(10),
+                    ),
                   ),
                 ),
               ),
-            ),
-            mistakeCounter > 2
-                ? Text(
-                    widget.term.answer,
-                    style: textStyleAnswer,
-                  )
-                : Container(),
-            const SizedBox(
-              height: 15,
-            ),
-            ElevatedButton(
-                onPressed: () {
-                  if (!formKey.currentState!.validate()) {
-                    return;
-                  }
+              mistakeCounter > 2
+                  ? Text(
+                      widget.term.answer,
+                      style: textStyleAnswer,
+                    )
+                  : Container(),
+              const SizedBox(
+                height: 15,
+              ),
+              ElevatedButton(
+                  onPressed: () {
+                    if (!formKey.currentState!.validate()) {
+                      return;
+                    }
 
-                  formKey.currentState!.save();
-                  if (mistakeCounter < 3) {
-                    controller.rightTerms.add(widget.term);
-                  } else {
-                    controller.wrongTerms.add(widget.term);
-                  }
+                    formKey.currentState!.save();
+                    if (mistakeCounter < 3) {
+                      controller.rightTerms.add(widget.term);
+                    } else {
+                      controller.wrongTerms.add(widget.term);
+                    }
 
-                  navigationInExam(
-                      context: context,
-                      controller: controller,
-                      index: widget.index);
-                },
-                child: !checkIfLastPage(controller, widget.index)
-                    ? const Text('Next question')
-                    : const Text('Finish exam')),
-            const SizedBox(
-              height: 40,
-            ),
-          ],
+                    navigationInExam(
+                        context: context,
+                        controller: controller,
+                        index: widget.index);
+                  },
+                  child: !checkIfLastPage(controller, widget.index)
+                      ? const Text('Next question')
+                      : const Text('Finish exam')),
+              const SizedBox(
+                height: 40,
+              ),
+            ],
+          ),
         ),
       ),
     );
@@ -338,12 +357,14 @@ class ExamCardMultipleOption extends StatefulWidget {
 class _ExamCardMultipleOptionState extends State<ExamCardMultipleOption> {
   Color tileColor = primary;
   bool useTerms = true;
-  List<String>? options;
+  List<String> options = [];
   String? answer;
 
   @override
   Widget build(BuildContext context) {
     final textStyleTerm = Theme.of(context).textTheme.headline2;
+    final textStyleLongTerm = Theme.of(context).textTheme.headline4;
+
     Controller controller = Provider.of(context);
 
     // if (controller.testFromAnswers) {
@@ -364,7 +385,7 @@ class _ExamCardMultipleOptionState extends State<ExamCardMultipleOption> {
 
     // the answer and options variable only get rebuild when the tilestatus is positive again, this status is handled in the answertile and
     //it is negative when the tile is clicked and set to positive on navigation
-    if (controller.tileStatus) {
+    if (controller.tileStatus && !controller.updateStar || options.isEmpty) {
       switch (controller.examType) {
         case ExamType.useTerms:
           answer = widget.term.answer;
@@ -387,19 +408,32 @@ class _ExamCardMultipleOptionState extends State<ExamCardMultipleOption> {
       options = multipleOptionMaker(controller, answer!, useTerms);
     }
 
+    //i dont like this
+
+    controller.updateStar = false;
+
+    String textToDisplayVar = textToDisplay(widget.term, useTerms);
+    int chars = textToDisplayVar.characters.length;
+    bool useLongTextStyle = chars > 45;
+
     // TODO: implement build
     return Padding(
       padding: const EdgeInsets.all(10),
       child: Column(
+        mainAxisSize: MainAxisSize.max,
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Text(
-            textToDisplay(widget.term, useTerms),
-            style: textStyleTerm,
-            textAlign: TextAlign.center,
+          IconButtonFavoriteTerm(controller: controller, term: widget.term),
+          Flexible(
+            child: Text(
+              textToDisplayVar,
+              style: useLongTextStyle ? textStyleLongTerm : textStyleTerm,
+              overflow: TextOverflow.fade,
+              textAlign: TextAlign.center,
+            ),
           ),
           const SizedBox(
-            height: 15,
+            height: 25,
           ),
           const Text('Select the right option'),
           const SizedBox(
@@ -408,11 +442,11 @@ class _ExamCardMultipleOptionState extends State<ExamCardMultipleOption> {
           ListView.builder(
               padding: const EdgeInsets.all(15),
               shrinkWrap: true,
-              itemCount: options!.length,
+              itemCount: options.length,
               itemBuilder: (context, index) {
                 return MultipleOptionTile(
                     answer: answer!,
-                    options: options!,
+                    options: options,
                     index: index,
                     term: widget.term,
                     indexPageController: widget.indexPageController);
@@ -474,7 +508,7 @@ class _MultipleOptionTileState extends State<MultipleOptionTile> {
         }
         controller.notifyNoob();
 
-        Timer(const Duration(seconds: 2), () {
+        Timer(const Duration(seconds: 3), () {
           controller.tileStatus = true;
 
           navigationInExam(

@@ -10,8 +10,23 @@ AppBar myAppBar(
     {String? title, required BuildContext context, required String type}) {
   Controller controller = Provider.of<Controller>(context);
   return AppBar(
+    leading: type == 'home'
+        ? const Padding(
+            padding: EdgeInsets.only(left: 10.0),
+            child: Image(
+              image: AssetImage('assets/icon1.png'),
+            ),
+          )
+        : null,
     title: Text(title ?? 'Elephant'),
     actions: [
+      type == 'home'
+          ? IconButton(
+              onPressed: () {
+                Navigator.of(context).pushNamed('/settingsPage');
+              },
+              icon: const Icon(Icons.settings_applications_outlined))
+          : Container(),
       type == 'glossary'
           ? IconButton(
               onPressed: () {
@@ -59,6 +74,7 @@ navigateToDifficultExam(
   controller.clearLists();
   controller.generateCurrentTermsList();
   controller.generateDifficultTermList();
+  Navigator.of(context).pop();
   Navigator.of(context).pushNamed(ExamPage.routeName,
       arguments: ExamArguments(
         examType: type,

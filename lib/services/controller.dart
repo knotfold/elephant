@@ -14,7 +14,8 @@ class Controller with ChangeNotifier {
   late GlossaryModel _currentGlossary;
   late TermModel currentTerm;
 
-  //mutlipleOption tiles
+  //mutlipleOption tiles && exams variables
+  bool updateStar = true;
   bool tileStatus = true;
   Color tileColor = primary;
 
