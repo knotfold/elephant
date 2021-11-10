@@ -39,6 +39,12 @@ class _FilterGlossaryTermsPageState extends State<FilterGlossaryTermsPage> {
                 children: [
                   OutlinedButton(
                     onPressed: () {
+                      if (controller.currentGlossary.tags.length >= 20) {
+                        Fluttertoast.showToast(
+                            toastLength: Toast.LENGTH_LONG,
+                            msg: 'Maximum number of tags reached');
+                        return;
+                      }
                       showDialog(
                           context: context,
                           builder: (context) {
@@ -52,12 +58,17 @@ class _FilterGlossaryTermsPageState extends State<FilterGlossaryTermsPage> {
                                   child: Column(
                                     children: [
                                       TextFormField(
+                                        maxLength: 20,
                                         decoration: const InputDecoration(
                                           label: Text('Tag name'),
                                         ),
                                         validator: (value) {
                                           if (value == null) {
                                             return 'Please add a name to the tag';
+                                          }
+                                          if (controller.currentGlossary.tags
+                                              .contains(value.trim())) {
+                                            return 'This tag already exists';
                                           }
                                         },
                                         onSaved: (value) {
@@ -95,12 +106,28 @@ class _FilterGlossaryTermsPageState extends State<FilterGlossaryTermsPage> {
                                                     toastLength:
                                                         Toast.LENGTH_LONG);
                                                 //At the tag to the momentary state of the current glossary
+
                                                 controller.currentGlossary.tags
                                                     .add(tagName);
                                                 controller.notifyNoob();
-                                              });
+                                              }).onError((error, stackTrace) {
+                                                Fluttertoast.showToast(
+                                                    msg:
+                                                        'Error, tag could not be added',
+                                                    toastLength:
+                                                        Toast.LENGTH_LONG);
+                                              }).timeout(
+                                                const Duration(seconds: 30),
+                                                onTimeout: () {
+                                                  Fluttertoast.showToast(
+                                                      msg:
+                                                          'Error adding the add, check your connection',
+                                                      toastLength:
+                                                          Toast.LENGTH_LONG);
+                                                },
+                                              );
                                             },
-                                            child: const Text('New Tag'),
+                                            child: const Text('Add Tag'),
                                           ),
                                         ],
                                       ),

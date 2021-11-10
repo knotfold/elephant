@@ -1,14 +1,32 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:elephant/services/services.dart';
 import 'package:elephant/shared/colors.dart';
+import 'package:elephant/shared/widgets.dart';
 import 'package:flutter/material.dart';
 import 'package:elephant/pages/pages.dart';
+import 'package:flutter/services.dart';
+import 'package:fluttertoast/fluttertoast.dart';
 import 'package:provider/provider.dart';
 
 class CustomSearchDelegate extends SearchDelegate {
   @override
   List<Widget>? buildActions(BuildContext context) {
-    return [];
+    return [
+      IconButton(
+        onPressed: () {
+          Clipboard.setData(ClipboardData(text: query)).then((_) {
+            Fluttertoast.showToast(
+                msg: 'Term copied', toastLength: Toast.LENGTH_LONG);
+          });
+        },
+        icon: const Icon(Icons.copy),
+      ),
+      IconButton(
+          onPressed: () {
+            query = '';
+          },
+          icon: Icon(Icons.cancel_outlined))
+    ];
   }
 
   // @override
@@ -28,24 +46,34 @@ class CustomSearchDelegate extends SearchDelegate {
   ThemeData appBarTheme(BuildContext context) {
     final ThemeData theme = Theme.of(context);
     return theme.copyWith(
+        indicatorColor: Theme.of(context).colorScheme.secondary,
+        colorScheme: Theme.of(context).colorScheme,
         primaryColor: primary,
         primaryIconTheme: theme.iconTheme,
-        primaryColorBrightness: theme.primaryColorBrightness,
-        primaryTextTheme: theme.primaryTextTheme,
-        highlightColor: secondaryColor,
-        textSelectionTheme: TextSelectionThemeData(cursorColor: secondaryColor),
+        highlightColor: Theme.of(context).colorScheme.secondary,
+        textSelectionTheme: TextSelectionThemeData(
+            selectionHandleColor: Theme.of(context).colorScheme.secondary,
+            selectionColor: Theme.of(context).colorScheme.secondary,
+            cursorColor: Theme.of(context).colorScheme.secondary),
         inputDecorationTheme: InputDecorationTheme(
-            focusColor: secondaryColor,
-            helperStyle: TextStyle(color: secondaryColor)),
+            fillColor: Theme.of(context).colorScheme.secondary,
+            hoverColor: Theme.of(context).colorScheme.secondary,
+            focusColor: Theme.of(context).colorScheme.secondary,
+            helperStyle:
+                TextStyle(color: Theme.of(context).colorScheme.secondary)),
         textTheme: theme.textTheme.copyWith());
   }
 
   @override
   Widget? buildLeading(BuildContext context) {
+    Controller controller = Provider.of(context);
     // TODO: implement buildLeading
     return IconButton(
-      icon: const Icon(Icons.arrow_back),
+      icon: const Icon(
+        Icons.arrow_back_ios,
+      ),
       onPressed: () {
+        controller.isSearching = false;
         Navigator.of(context).pop();
       },
     );
@@ -61,7 +89,9 @@ class CustomSearchDelegate extends SearchDelegate {
             .where('term', isEqualTo: query.capitalize())
             // .orderBy('term', descending: true)
             .snapshots();
-    if (query.isEmpty || query.trim() == '') {}
+    if (query.isEmpty || query.trim() == '') {
+      return Container();
+    }
 
     return Column(
       mainAxisSize: MainAxisSize.max,
@@ -69,11 +99,11 @@ class CustomSearchDelegate extends SearchDelegate {
         StreamBuilder<QuerySnapshot>(
             stream: _termStream,
             builder: (context, snapshot) {
+              if (query.isEmpty || query.trim() == '') {
+                return Container();
+              }
               if (snapshot.hasError) {
-                print(snapshot.error);
-                return const Center(
-                  child: Text('Error'),
-                );
+                return const ErrorConnection();
               }
 
               if (!snapshot.hasData) {
@@ -87,7 +117,7 @@ class CustomSearchDelegate extends SearchDelegate {
 
               controller.currentGlossaryDocuments = snapshot.data!.docs;
 
-              print('there is docs');
+              // print('there is docs');
 
               if (controller.currentGlossaryDocuments.isEmpty) {
                 return Center(
@@ -107,11 +137,16 @@ class CustomSearchDelegate extends SearchDelegate {
                       IconButton(
                           onPressed: () {
                             Navigator.of(context).pop();
+                            Clipboard.setData(ClipboardData(text: query))
+                                .then((_) {
+                              Fluttertoast.showToast(
+                                  msg: 'Term copied',
+                                  toastLength: Toast.LENGTH_LONG);
+                            });
                             showDialog(
                                 context: context,
                                 builder: (context) {
                                   return DialogAddNewTerm(
-                                      glossaryModel: controller.currentGlossary,
                                       term: TermModel(
                                           query,
                                           '',
@@ -125,6 +160,8 @@ class CustomSearchDelegate extends SearchDelegate {
                   ),
                 );
               }
+
+              controller.isSearching = true;
 
               return ListViewBuilderTerms(controller: controller);
             }),

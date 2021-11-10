@@ -9,6 +9,7 @@ import 'package:provider/provider.dart';
 AppBar myAppBar(
     {String? title, required BuildContext context, required String type}) {
   Controller controller = Provider.of<Controller>(context);
+  ColorScheme colorScheme = Theme.of(context).colorScheme;
   return AppBar(
     leading: type == 'home'
         ? const Padding(
@@ -27,32 +28,32 @@ AppBar myAppBar(
               },
               icon: const Icon(Icons.settings_applications_outlined))
           : Container(),
-      type == 'glossary'
-          ? IconButton(
-              onPressed: () {
-                showSearch(
-                  context: context,
-                  delegate: CustomSearchDelegate(),
-                );
-              },
-              icon: const Icon(Icons.search))
-          : Container(),
-      type == 'glossary'
-          ? IconButton(
-              onPressed: () {
-                showDialog(
-                    context: context,
-                    builder: (context) => const DialogStartButton());
-              },
-              icon: const Icon(Icons.play_circle_outline_rounded))
-          : Container(),
-      type == 'glossary'
-          ? IconButton(
-              onPressed: () {
-                Navigator.of(context).pushNamed('/filterGlossaryTermsPage');
-              },
-              icon: const Icon(Icons.filter_list))
-          : Container(),
+      // type == 'glossary'
+      //     ? IconButton(
+      //         onPressed: () {
+      //           showSearch(
+      //             context: context,
+      //             delegate: CustomSearchDelegate(),
+      //           );
+      //         },
+      //         icon: const Icon(Icons.search))
+      //     : Container(),
+      // type == 'glossary'
+      //     ? IconButton(
+      //         onPressed: () {
+      //           showDialog(
+      //               context: context,
+      //               builder: (context) => const DialogStartButton());
+      //         },
+      //         icon: const Icon(Icons.play_circle_outline_rounded))
+      //     : Container(),
+      // type == 'glossary'
+      //     ? IconButton(
+      //         onPressed: () {
+      //           Navigator.of(context).pushNamed('/filterGlossaryTermsPage');
+      //         },
+      //         icon: const Icon(Icons.filter_list))
+      //     : Container(),
       type == 'Difficult Terms'
           ? IconButton(
               onPressed: () {
@@ -61,7 +62,51 @@ AppBar myAppBar(
               icon: const Icon(Icons.play_circle_outline_outlined))
           : Container(),
       IconButton(
-          onPressed: () {}, icon: const Icon(Icons.help_outline_rounded)),
+          onPressed: () {
+            ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+                duration: Duration(seconds: 5),
+                content: ListView(
+                  shrinkWrap: true,
+                  children: [
+                    ListTile(
+                      title: Text('Filter'),
+                      leading: Icon(
+                        Icons.filter_list,
+                        color: colorScheme.onBackground,
+                      ),
+                    ),
+                    ListTile(
+                      title: Text('Difficult Terms'),
+                      leading: Icon(
+                        Icons.donut_large_rounded,
+                        color: colorScheme.onBackground,
+                      ),
+                    ),
+                    ListTile(
+                      title: Text('Exam'),
+                      leading: Icon(
+                        Icons.play_circle_outline_outlined,
+                        color: colorScheme.onBackground,
+                      ),
+                    ),
+                    ListTile(
+                      title: Text('Search'),
+                      leading: Icon(
+                        Icons.search,
+                        color: colorScheme.onBackground,
+                      ),
+                    ),
+                    ListTile(
+                      title: Text('Settings'),
+                      leading: Icon(
+                        Icons.settings,
+                        color: colorScheme.onBackground,
+                      ),
+                    ),
+                  ],
+                )));
+          },
+          icon: const Icon(Icons.help_outline_rounded)),
     ],
   );
 }
@@ -71,7 +116,7 @@ navigateToDifficultExam(
   BuildContext context,
   Controller controller,
 ) {
-  controller.clearLists();
+  controller.resetControllerVars();
   controller.generateCurrentTermsList();
   controller.generateDifficultTermList();
   Navigator.of(context).pop();
@@ -79,6 +124,33 @@ navigateToDifficultExam(
       arguments: ExamArguments(
         examType: type,
       ));
+}
+
+class ErrorConnection extends StatelessWidget {
+  const ErrorConnection({Key? key}) : super(key: key);
+
+  @override
+  Widget build(BuildContext context) {
+    // TODO: implement build
+    return Center(
+      child: Column(
+        children: const [
+          Icon(
+            Icons.error,
+            size: 50,
+            color: Colors.red,
+          ),
+          SizedBox(
+            height: 15,
+          ),
+          Text(
+            'An error has occured while loading the data, check your wifi connection.',
+            textAlign: TextAlign.center,
+          ),
+        ],
+      ),
+    );
+  }
 }
 
 class CheckBoxListTags extends StatelessWidget {
@@ -126,13 +198,14 @@ class GlossaryCard extends StatelessWidget {
     // TODO: implement build
     return GestureDetector(
       onTap: () {
-        controller.clearLists();
+        controller.resetControllerVars();
         controller.currentGlossary = glossary;
         Navigator.of(context).pushNamed('/glossaryPage');
       },
       child: Card(
         elevation: 5,
-        child: Container(
+        child: Padding(
+          padding: const EdgeInsets.all(8.0),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.end,
             mainAxisAlignment: MainAxisAlignment.start,
@@ -143,15 +216,19 @@ class GlossaryCard extends StatelessWidget {
                 size: 30,
               ),
               const SizedBox(
-                height: 35,
+                height: 15,
               ),
-              Container(
-                padding: const EdgeInsets.all(10),
-                decoration: const BoxDecoration(
-                  color: secondaryColor,
-                ),
-                child: Text(
-                  glossary.name,
+              Flexible(
+                child: Container(
+                  padding: const EdgeInsets.all(5),
+                  decoration: BoxDecoration(
+                    color: Theme.of(context).colorScheme.secondary,
+                  ),
+                  child: Text(
+                    glossary.name,
+                    style: TextStyle(
+                        color: Theme.of(context).colorScheme.onSecondary),
+                  ),
                 ),
               ),
 

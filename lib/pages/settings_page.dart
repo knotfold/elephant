@@ -17,7 +17,14 @@ class SettingsPage extends StatelessWidget {
             },
             leading: const Icon(Icons.palette),
             title: const Text('Theme'),
-          )
+          ),
+          ListTile(
+            leading: const Icon(Icons.tablet_sharp),
+            title: const Text('TestWidget'),
+            onTap: () {
+              Navigator.of(context).pushNamed('/widgetTester');
+            },
+          ),
         ],
       ),
     );

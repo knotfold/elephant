@@ -48,7 +48,7 @@ class _DifficultTermsPageState extends State<DifficultTermsPage> {
                                   controller: controller, term: term)
                             ],
                           ),
-                          leading: Icon(controller.termIconAsignner(term.type)),
+                          // leading: Icon(controller.termIconAsignner(term.type)),
                           title: Text(term.term),
                           subtitle: Text(term.answer),
                         );

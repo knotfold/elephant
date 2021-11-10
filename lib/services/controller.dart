@@ -5,7 +5,12 @@ import 'package:flutter/material.dart';
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
+import 'package:elephant/themes/app_main_theme.dart';
+
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:elephant/themes/app_main_theme.dart';
 
 enum ExamType { useTerms, useAnswers, mixed }
 
@@ -13,6 +18,8 @@ class Controller with ChangeNotifier {
   UserModel user = UserModel(username: 'Kno');
   late GlossaryModel _currentGlossary;
   late TermModel currentTerm;
+
+  int currentTermCount = 0;
 
   //mutlipleOption tiles && exams variables
   bool updateStar = true;
@@ -29,6 +36,12 @@ class Controller with ChangeNotifier {
   bool useFavoriteTerms = false;
 
   bool isLoading = false;
+
+  //used to detect if the user is in the search page
+  bool isSearching = false;
+
+  bool userDataInitialized = false;
+  bool navigateToHomeExecuted = false;
 
   ExamType examType = ExamType.useTerms;
 
@@ -119,10 +132,12 @@ class Controller with ChangeNotifier {
     }
   }
 
-  clearLists() {
+  resetControllerVars() {
     wrongTerms.clear();
     rightTerms.clear();
     currentTermList.clear();
+    currentTermCount = 0;
+    useFavoriteTerms = false;
   }
 
   //Creates a query to show for the glossary page, the main porpouse of this is to have a way to filter the terms on a glossary
@@ -170,7 +185,83 @@ class Controller with ChangeNotifier {
     return stream;
   }
 
+  String termTypeToString(TermModel termModel) {
+    return termModel.type.replaceRange(0, 5, '').capitalize();
+  }
+
   set currentGlossary(GlossaryModel currentGlossary) {
     _currentGlossary = currentGlossary;
   }
+
+  loginCheck() {}
+
+  initilizedUserData() async {
+    await assignTheme();
+    userDataInitialized = true;
+    notifyListeners();
+  }
+
+//
+//
+//
+//
+  //theme stuff
+
+  late String currentThemeKeyWord;
+
+  assignTheme() async {
+    Future<SharedPreferences> _prefs = SharedPreferences.getInstance();
+    final SharedPreferences prefs = await _prefs;
+
+    currentThemeKeyWord = prefs.getString('currentTheme') ?? 'Greelephant';
+    ColorScheme lightColorScheme;
+    ColorScheme darkColorScheme;
+    switch (currentThemeKeyWord) {
+      case 'Yellowphant':
+        lightColorScheme = GalleryThemeData.lightColorSchemeYellow;
+        darkColorScheme = GalleryThemeData.darkColorSchemeYellow;
+        break;
+      case 'Bluelephant':
+        lightColorScheme = GalleryThemeData.lightColorSchemeBlue;
+        darkColorScheme = GalleryThemeData.darkColorSchemeBlue;
+        break;
+      case 'Greelephant':
+        lightColorScheme = GalleryThemeData.lightColorSchemeGudGreen;
+        darkColorScheme = GalleryThemeData.darkColorSchemeGudGreen;
+        break;
+      case 'Orangephant':
+        lightColorScheme = GalleryThemeData.lightColorSchemeOrange;
+        darkColorScheme = GalleryThemeData.darkColorSchemeOrange;
+        break;
+      default:
+        lightColorScheme = GalleryThemeData.lightColorSchemeGudGreen;
+        darkColorScheme = GalleryThemeData.darkColorSchemeGudGreen;
+        break;
+    }
+    light = GalleryThemeData.themeData(
+        lightColorScheme, GalleryThemeData.lightFocusColor);
+
+    dark = GalleryThemeData.themeData(
+        darkColorScheme, GalleryThemeData.lightFocusColor);
+  }
+
+  onSelectTheme(ColorScheme colorSchemeLight, ColorScheme colorSchemeDark,
+      String value) async {
+    Future<SharedPreferences> _prefs = SharedPreferences.getInstance();
+    final SharedPreferences prefs = await _prefs;
+    light = GalleryThemeData.themeData(
+        colorSchemeLight, GalleryThemeData.lightFocusColor);
+    dark = GalleryThemeData.themeData(
+        colorSchemeDark, GalleryThemeData.darkFocusColor);
+    await prefs.setString('currentTheme', value);
+    notifyListeners();
+  }
+
+  ThemeData light = GalleryThemeData.themeData(
+      GalleryThemeData.lightColorSchemeGudGreen,
+      GalleryThemeData.lightFocusColor);
+
+  ThemeData dark = GalleryThemeData.themeData(
+      GalleryThemeData.darkColorSchemeGudGreen,
+      GalleryThemeData.lightFocusColor);
 }

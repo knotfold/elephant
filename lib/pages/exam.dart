@@ -114,7 +114,14 @@ class _FlashCardState extends State<FlashCard> {
   Widget build(BuildContext context) {
     Controller controller = Provider.of<Controller>(context);
     final textStyleTerm = Theme.of(context).textTheme.headline2;
-    final textStyleAnswer = Theme.of(context).textTheme.headline6;
+    final textStyleLongTerm = Theme.of(context).textTheme.headline4;
+    final textStyleTermType = Theme.of(context).textTheme.subtitle2;
+    ColorScheme colorScheme = Theme.of(context).colorScheme;
+
+    // final textStyleAnswer = Theme.of(context).textTheme.headline6;
+
+    int chars = widget.term.term.characters.length;
+    bool useLongTextStyle = chars > 45;
     // TODO: implement build
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 25),
@@ -129,7 +136,9 @@ class _FlashCardState extends State<FlashCard> {
               });
             },
             child: Container(
-              decoration: BoxDecoration(border: Border.all(color: sDark)),
+              decoration: BoxDecoration(
+                  border: Border.all(
+                      color: Theme.of(context).colorScheme.secondary)),
               padding: const EdgeInsets.all(60),
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
@@ -137,12 +146,24 @@ class _FlashCardState extends State<FlashCard> {
                   Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      Icon(
-                        controller.termIconAsignner(widget.term.type),
-                        size: 40,
-                      ),
+                      // Icon(
+                      //   controller.termIconAsignner(widget.term.type),
+                      //   size: 40,
+                      // ),
                       IconButtonFavoriteTerm(
-                          controller: controller, term: widget.term)
+                          controller: controller, term: widget.term),
+                      Container(
+                        padding: const EdgeInsets.all(8),
+                        decoration: BoxDecoration(
+                          borderRadius:
+                              const BorderRadius.all(Radius.circular(15)),
+                          border: Border.all(color: colorScheme.onBackground),
+                        ),
+                        child: Text(
+                          controller.termTypeToString(widget.term),
+                          style: textStyleTermType,
+                        ),
+                      ),
                     ],
                   ),
                   const SizedBox(
@@ -150,8 +171,9 @@ class _FlashCardState extends State<FlashCard> {
                   ),
                   Text(
                     widget.term.term,
-                    style: textStyleTerm,
+                    style: useLongTextStyle ? textStyleLongTerm : textStyleTerm,
                   ),
+
                   const SizedBox(
                     height: 30,
                   ),
@@ -217,6 +239,9 @@ class _ExamCardState extends State<ExamCard> {
   Widget build(BuildContext context) {
     Controller controller = Provider.of<Controller>(context);
     final textStyleAnswer = Theme.of(context).textTheme.headline3;
+    final textStyleLongTerm = Theme.of(context).textTheme.headline4;
+    int chars = widget.term.term.characters.length;
+    bool useLongTextStyle = chars > 45;
     // TODO: implement build
     return SingleChildScrollView(
       child: Padding(
@@ -237,7 +262,10 @@ class _ExamCardState extends State<ExamCard> {
               const SizedBox(
                 height: 15,
               ),
-              Text(widget.term.term),
+              Text(
+                widget.term.term,
+                style: useLongTextStyle ? textStyleLongTerm : textStyleAnswer,
+              ),
               const SizedBox(
                 height: 15,
               ),
@@ -323,6 +351,8 @@ void nextPage(Controller controller, int index) {
   controller.pageControllerExam.animateToPage(index + 1,
       duration: const Duration(milliseconds: 500), curve: Curves.easeIn);
 }
+
+makehamburgers(String hamburgername, int numberofhamburgers) {}
 
 void navigationInExam(
     {required BuildContext context,

@@ -35,14 +35,16 @@ class _HomeState extends State<Home> {
         child: StreamBuilder<QuerySnapshot>(
           stream: _glossaryStream,
           builder: (context, snapshot) {
-            //TODO: display error
             if (snapshot.hasError) {
-              return Container();
+              return const ErrorConnection();
             }
-            //TODO: display error
+
             if (!snapshot.hasData) {
-              return Container(
-                child: const CircularProgressIndicator(),
+              return const Center(
+                child: Padding(
+                  padding: EdgeInsets.all(25.0),
+                  child: CircularProgressIndicator(),
+                ),
               );
             }
             List<QueryDocumentSnapshot> queryDocuments = snapshot.data!.docs;
@@ -62,7 +64,7 @@ class _HomeState extends State<Home> {
             return GridView.builder(
                 itemCount: queryDocuments.length,
                 gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                    crossAxisCount: 2),
+                    crossAxisCount: 3),
                 itemBuilder: (context, index) {
                   return GlossaryCard(
                       glossary: GlossaryModel.fromDocumentSnapshot(
@@ -92,92 +94,101 @@ class DialogAddNewGlossary extends StatefulWidget {
 }
 
 class _DialogAddNewGlossaryState extends State<DialogAddNewGlossary> {
+  bool isLoading = false;
+  CollectionReference glossaries =
+      FirebaseFirestore.instance.collection('glossaries');
+  late String newGlossaryName;
+
+  final formKey = GlobalKey<FormState>();
   @override
   Widget build(BuildContext context) {
     final textThemeTitle = Theme.of(context).textTheme.headline5;
-    bool isLoading = false;
-    late String newGlossaryName;
-    CollectionReference glossaries =
-        FirebaseFirestore.instance.collection('glossaries');
-    final formKey = GlobalKey<FormState>();
+
     Controller controller = Provider.of<Controller>(context);
-    return Dialog(
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-      child: Container(
-        padding: const EdgeInsets.all(10),
-        child: Form(
-            key: formKey,
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Container(
-                  padding: const EdgeInsets.all(10),
-                  child: Text(
-                    'Add a new glossary',
-                    style: textThemeTitle,
-                  ),
-                ),
-                const SizedBox(
-                  height: 10,
-                ),
-                TextFormField(
-                  decoration: const InputDecoration(
-                    labelText: 'Glossary name',
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.all(
-                        Radius.circular(10),
-                      ),
+    return WillPopScope(
+      onWillPop: () async {
+        return isLoading ? false : true;
+      },
+      child: Dialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+        child: Container(
+          padding: const EdgeInsets.all(10),
+          child: Form(
+              key: formKey,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(10),
+                    child: Text(
+                      'Add a new glossary',
+                      style: textThemeTitle,
                     ),
                   ),
-                  validator: (value) {
-                    if (value!.trim() == '') {
-                      return 'Please give a name to the glossary';
-                    }
-                  },
-                  onSaved: (value) {
-                    newGlossaryName = value!;
-                  },
-                ),
-                isLoading
-                    // ignore: dead_code
-                    ? const CircularProgressIndicator()
-                    : ButtonBar(
-                        children: [
-                          OutlinedButton(
-                            onPressed: () {
-                              Navigator.of(context).pop();
-                            },
-                            child: const Text('Cancel'),
-                          ),
-                          ElevatedButton(
-                            onPressed: () async {
-                              if (!formKey.currentState!.validate()) {
-                                return;
-                              }
-                              formKey.currentState!.save();
-                              setState(() {
-                                isLoading = true;
-                              });
-                              await glossaries
-                                  .add({
-                                    'name': newGlossaryName,
-                                    'user': controller.user.username,
-                                    'tags': ['untagged']
-                                  })
-                                  .then((value) => print('User Added'))
-                                  .catchError(
-                                      (onError) => print('error ocurred'));
-                              setState(() {
-                                isLoading = false;
-                              });
-                            },
-                            child: const Text('Add glossary'),
-                          ),
-                        ],
-                      )
-              ],
-            )),
+                  const SizedBox(
+                    height: 10,
+                  ),
+                  TextFormField(
+                    maxLength: 30,
+                    decoration: const InputDecoration(
+                      labelText: 'Glossary name',
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.all(
+                          Radius.circular(10),
+                        ),
+                      ),
+                    ),
+                    validator: (value) {
+                      if (value!.trim() == '') {
+                        return 'Please give a name to the glossary';
+                      }
+                    },
+                    onSaved: (value) {
+                      newGlossaryName = value!;
+                    },
+                  ),
+                  isLoading
+                      // ignore: dead_code
+                      ? const CircularProgressIndicator()
+                      : ButtonBar(
+                          children: [
+                            OutlinedButton(
+                              onPressed: () {
+                                Navigator.of(context).pop();
+                              },
+                              child: const Text('Cancel'),
+                            ),
+                            ElevatedButton(
+                              onPressed: () async {
+                                if (!formKey.currentState!.validate()) {
+                                  return;
+                                }
+                                formKey.currentState!.save();
+                                setState(() {
+                                  isLoading = true;
+                                });
+                                await glossaries
+                                    .add({
+                                      'name': newGlossaryName,
+                                      'user': controller.user.username,
+                                      'tags': ['untagged']
+                                    })
+                                    .then((value) => print('User Added'))
+                                    .catchError(
+                                        (onError) => print('error ocurred'));
+                                setState(() {
+                                  isLoading = false;
+                                });
+                                Navigator.of(context).pop();
+                              },
+                              child: const Text('Add glossary'),
+                            ),
+                          ],
+                        )
+                ],
+              )),
+        ),
       ),
     );
   }

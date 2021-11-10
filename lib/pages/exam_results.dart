@@ -2,6 +2,7 @@ import 'package:elephant/services/services.dart';
 import 'package:elephant/shared/widgets.dart';
 import 'package:flutter/material.dart';
 import 'package:elephant/shared/shared.dart';
+import 'package:fluttertoast/fluttertoast.dart';
 import 'package:provider/provider.dart';
 
 class ExamResultArguments {
@@ -36,7 +37,8 @@ class ExamResultPage extends StatelessWidget {
     // TODO: implement build
     return WillPopScope(
       onWillPop: () async {
-        controller.clearLists();
+        if (controller.isLoading) return false;
+        controller.resetControllerVars();
         controller.generateCurrentTermsList();
         controller.generateDifficultTermList();
         return true;
@@ -61,6 +63,10 @@ class ExamResultPage extends StatelessWidget {
                     ),
                   ),
                 );
+              }
+
+              if (!asyncSnapshot.data!) {
+                return ErrorConnection();
               }
 
               return Padding(
@@ -173,13 +179,19 @@ class ExamResultPage extends StatelessWidget {
 
   Future<bool> updateDifficultTerms(
       Controller controller, bool difficultTerms) async {
+    controller.isLoading = true;
     bool updated = true;
     if (difficultTerms) {
       for (var term in controller.rightTerms) {
         await term.reference
             .update({'difficultTerm': false}).onError((error, stackTrace) {
-          updated = false;
-          print(error);
+          Fluttertoast.showToast(
+              msg: 'Error updating the results, check your connection',
+              toastLength: Toast.LENGTH_LONG);
+        }).timeout(const Duration(seconds: 30), onTimeout: () {
+          Fluttertoast.showToast(
+              msg: 'Error updating the results, check your connection',
+              toastLength: Toast.LENGTH_LONG);
         });
       }
       print('Difficult terms updated');
@@ -187,12 +199,18 @@ class ExamResultPage extends StatelessWidget {
       for (var term in controller.wrongTerms) {
         await term.reference
             .update({'difficultTerm': true}).onError((error, stackTrace) {
-          updated = false;
-          print(error);
+          Fluttertoast.showToast(
+              msg: 'Error updating the results, check your connection',
+              toastLength: Toast.LENGTH_LONG);
+        }).timeout(const Duration(seconds: 30), onTimeout: () {
+          Fluttertoast.showToast(
+              msg: 'Error updating the results, check your connection',
+              toastLength: Toast.LENGTH_LONG);
         });
       }
-      print('Difficult terms updated');
     }
+
+    controller.isLoading = false;
 
     return updated;
   }

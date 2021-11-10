@@ -29,6 +29,7 @@ class MyApp extends StatelessWidget {
   // This widget is the root of your application.
   @override
   Widget build(BuildContext context) {
+    Controller controller = Provider.of(context);
     SystemChrome.setPreferredOrientations([
       DeviceOrientation.portraitUp,
       DeviceOrientation.portraitDown,
@@ -36,10 +37,11 @@ class MyApp extends StatelessWidget {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
       title: 'Flutter Demo',
-      theme: GalleryThemeData.lightThemeData,
-      darkTheme: GalleryThemeData.darkThemeData,
+      theme: controller.light,
+      darkTheme: controller.dark,
       themeMode: ThemeMode.system,
       home: const Home(),
+      initialRoute: '/startPage',
       routes: {
         ExamPage.routeName: (context) => const ExamPage(),
         ExamResultPage.routeName: (context) => const ExamResultPage(),
@@ -49,6 +51,8 @@ class MyApp extends StatelessWidget {
             const FilterGlossaryTermsPage(),
         '/settingsPage': (context) => const SettingsPage(),
         '/themeChooserPage': (context) => const ThemeChooserPage(),
+        '/startPage': (context) => const StartPage(),
+        '/widgetTester': (context) => const WidgetTester(),
       },
     );
   }
