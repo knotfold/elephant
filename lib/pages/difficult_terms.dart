@@ -40,18 +40,7 @@ class _DifficultTermsPageState extends State<DifficultTermsPage> {
                       itemCount: controller.difficultTermList.length,
                       itemBuilder: (context, index) {
                         TermModel term = controller.difficultTermList[index];
-                        return ListTile(
-                          trailing: Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              IconButtonFavoriteTerm(
-                                  controller: controller, term: term)
-                            ],
-                          ),
-                          // leading: Icon(controller.termIconAsignner(term.type)),
-                          title: Text(term.term),
-                          subtitle: Text(term.answer),
-                        );
+                        return ListTileTerm(term: term, controller: controller);
                       },
                     ),
             ],

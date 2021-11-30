@@ -53,6 +53,7 @@ class MyApp extends StatelessWidget {
         '/themeChooserPage': (context) => const ThemeChooserPage(),
         '/startPage': (context) => const StartPage(),
         '/widgetTester': (context) => const WidgetTester(),
+        '/examSettingsPage': (context) => const ExamSettingsPage(),
       },
     );
   }

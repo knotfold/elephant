@@ -115,11 +115,11 @@ class CustomSearchDelegate extends SearchDelegate {
                 );
               }
 
-              controller.currentGlossaryDocuments = snapshot.data!.docs;
+              controller.currentFilteredGlossaryDocuments = snapshot.data!.docs;
 
               // print('there is docs');
 
-              if (controller.currentGlossaryDocuments.isEmpty) {
+              if (controller.currentFilteredGlossaryDocuments.isEmpty) {
                 return Center(
                   child: Column(
                     mainAxisSize: MainAxisSize.max,
@@ -136,6 +136,7 @@ class CustomSearchDelegate extends SearchDelegate {
                       ),
                       IconButton(
                           onPressed: () {
+                            controller.isSearching = false;
                             Navigator.of(context).pop();
                             Clipboard.setData(ClipboardData(text: query))
                                 .then((_) {
@@ -143,6 +144,7 @@ class CustomSearchDelegate extends SearchDelegate {
                                   msg: 'Term copied',
                                   toastLength: Toast.LENGTH_LONG);
                             });
+
                             showDialog(
                                 context: context,
                                 builder: (context) {

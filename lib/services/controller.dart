@@ -26,6 +26,8 @@ class Controller with ChangeNotifier {
   bool tileStatus = true;
   Color tileColor = primary;
 
+  int currentCardIndex = 1;
+
   //bool
   bool useFilteredTerms = false;
   bool mixTermsAnswers = false;
@@ -36,6 +38,8 @@ class Controller with ChangeNotifier {
   bool useFavoriteTerms = false;
 
   bool isLoading = false;
+
+  bool useFixedLength = false;
 
   //used to detect if the user is in the search page
   bool isSearching = false;
@@ -53,6 +57,8 @@ class Controller with ChangeNotifier {
   late List<dynamic> selectedTags = [];
   late List<QueryDocumentSnapshot> currentGlossaryDocuments;
   late List<TermModel> difficultTermList = [];
+
+  late List<QueryDocumentSnapshot> currentFilteredGlossaryDocuments = [];
 
   //streams
   late Stream<QuerySnapshot> queryStream;
@@ -107,12 +113,21 @@ class Controller with ChangeNotifier {
     return iconData;
   }
 
-  List<TermModel> generateCurrentTermsList() {
+  List<TermModel> generateCurrentTermsList({required int examLength}) {
     //makes a new term list with the current glossary documents obtained from the stream
     currentTermList.clear();
+    if (examLength == 0 || examLength >= currentGlossaryDocuments.length) {
+      for (var element in currentGlossaryDocuments) {
+        currentTermList.add(TermModel.fromDocumentSnapshot(element));
+      }
 
-    for (var element in currentGlossaryDocuments) {
-      currentTermList.add(TermModel.fromDocumentSnapshot(element));
+      currentTermList.shuffle();
+      return currentTermList;
+    }
+
+    for (int i = 0; i < examLength; i++) {
+      currentTermList
+          .add(TermModel.fromDocumentSnapshot(currentGlossaryDocuments[i]));
     }
 
     currentTermList.shuffle();
@@ -137,7 +152,6 @@ class Controller with ChangeNotifier {
     rightTerms.clear();
     currentTermList.clear();
     currentTermCount = 0;
-    useFavoriteTerms = false;
   }
 
   //Creates a query to show for the glossary page, the main porpouse of this is to have a way to filter the terms on a glossary

@@ -42,6 +42,21 @@ class _ExamPageState extends State<ExamPage> {
       },
       child: Scaffold(
         appBar: AppBar(
+          actions: [
+            args.examType == 'flashCards'
+                ? IconButton(
+                    onPressed: () {
+                      showDialog(
+                          context: context,
+                          builder: (context) {
+                            return DialogFindTermIndex(
+                              termsList: termsList,
+                            );
+                          });
+                    },
+                    icon: Icon(Icons.find_in_page))
+                : Container(),
+          ],
           title: Text(
             args.examType.toUpperCase(),
           ),
@@ -90,6 +105,39 @@ class _ExamPageState extends State<ExamPage> {
 
               return page;
             }),
+      ),
+    );
+  }
+}
+
+class DialogFindTermIndex extends StatelessWidget {
+  final List<TermModel> termsList;
+  const DialogFindTermIndex({Key? key, required this.termsList})
+      : super(key: key);
+
+  @override
+  Widget build(BuildContext context) {
+    Controller controller = Provider.of(context);
+
+    // TODO: implement build
+    return Dialog(
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+      child: ListView.builder(
+        itemCount: termsList.length,
+        itemBuilder: (context, index) {
+          TermModel termModel = termsList[index];
+          return ListTile(
+            title: Text(termModel.term),
+            trailing: Text((index + 1).toString()),
+            onTap: () {
+              int ind = index;
+              nextPage(controller, index, true);
+              Navigator.of(context).pop();
+              print(index);
+            },
+          );
+        },
+        padding: EdgeInsets.all(20),
       ),
     );
   }
@@ -152,18 +200,11 @@ class _FlashCardState extends State<FlashCard> {
                       // ),
                       IconButtonFavoriteTerm(
                           controller: controller, term: widget.term),
-                      Container(
-                        padding: const EdgeInsets.all(8),
-                        decoration: BoxDecoration(
-                          borderRadius:
-                              const BorderRadius.all(Radius.circular(15)),
-                          border: Border.all(color: colorScheme.onBackground),
-                        ),
-                        child: Text(
-                          controller.termTypeToString(widget.term),
-                          style: textStyleTermType,
-                        ),
-                      ),
+                      TermTypeDisplayText(
+                          colorScheme: colorScheme,
+                          controller: controller,
+                          widget: widget,
+                          textStyleTermType: textStyleTermType),
                     ],
                   ),
                   const SizedBox(
@@ -175,9 +216,16 @@ class _FlashCardState extends State<FlashCard> {
                   ),
 
                   const SizedBox(
-                    height: 30,
+                    height: 20,
                   ),
                   uncoverText ? Text(widget.term.answer) : Container(),
+                  const SizedBox(
+                    height: 60,
+                  ),
+                  Row(
+                    children: [],
+                  ),
+                  Text(' ${widget.page + 1}/${widget.length}'),
                   // GestureDetector(
                   //   onTap: () {
                   //     setState(() {
@@ -192,7 +240,7 @@ class _FlashCardState extends State<FlashCard> {
                   //   ),
                   // ),
                   const SizedBox(
-                    height: 50,
+                    height: 30,
                   ),
                 ],
               ),
@@ -347,8 +395,11 @@ bool checkIfLastPage(Controller controller, int index) {
   return lastPage;
 }
 
-void nextPage(Controller controller, int index) {
-  controller.pageControllerExam.animateToPage(index + 1,
+void nextPage(Controller controller, int index, bool jump) {
+  //jump is used to determine if i want to jump to a certain page or just go to the next one, it being true means that i want to jump
+  //to the exact number
+  int page = jump ? index : index + 1;
+  controller.pageControllerExam.animateToPage(page,
       duration: const Duration(milliseconds: 500), curve: Curves.easeIn);
 }
 
@@ -359,7 +410,7 @@ void navigationInExam(
     required Controller controller,
     required int index}) {
   if (!checkIfLastPage(controller, index)) {
-    nextPage(controller, index);
+    nextPage(controller, index, false);
     // controller.pageControllerExam.nextPage(
     //     duration: const Duration(seconds: 1), curve: const ElasticInCurve());
   } else {

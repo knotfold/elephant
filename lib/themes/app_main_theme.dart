@@ -28,6 +28,11 @@ class GalleryThemeData {
         // iconTheme: IconThemeData(color: colorScheme.primary),
       ),
 
+      switchTheme: SwitchThemeData(
+          thumbColor:
+              MaterialStateProperty.all<Color>(colorScheme.secondaryVariant),
+          trackColor: MaterialStateProperty.all<Color>(colorScheme.secondary)),
+
       bottomNavigationBarTheme: BottomNavigationBarThemeData(
           backgroundColor: colorScheme.secondary,
           selectedItemColor: colorScheme.onSecondary,
@@ -43,8 +48,9 @@ class GalleryThemeData {
           checkColor: MaterialStateProperty.all<Color>(colorScheme.onSecondary),
           fillColor: MaterialStateProperty.all<Color>(colorScheme.secondary)),
 
-      textSelectionTheme:
-          TextSelectionThemeData(selectionColor: colorScheme.secondary),
+      textSelectionTheme: TextSelectionThemeData(
+          selectionColor: colorScheme.secondary,
+          cursorColor: colorScheme.secondary),
       buttonBarTheme: const ButtonBarThemeData(
         buttonHeight: 15,
       ),

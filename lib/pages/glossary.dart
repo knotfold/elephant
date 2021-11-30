@@ -1,5 +1,4 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:elephant/pages/exam.dart';
 import 'package:elephant/services/services.dart';
 import 'package:elephant/shared/shared.dart';
 import 'package:elephant/shared/widgets.dart';
@@ -31,9 +30,7 @@ class _GlossaryPageState extends State<GlossaryPage> {
             navigateToDifficultTerms(context);
             break;
           case 1:
-            showDialog(
-                context: context,
-                builder: (context) => const DialogStartButton());
+            Navigator.of(context).pushNamed('/examSettingsPage');
 
             break;
           case 2:
@@ -73,7 +70,6 @@ class _GlossaryPageState extends State<GlossaryPage> {
 
   navigateToDifficultTerms(BuildContext context) {
     Controller controller = Provider.of<Controller>(context, listen: false);
-    controller.generateCurrentTermsList();
     controller.generateDifficultTermList();
     Navigator.of(context).pushNamed('/difficultTermsPage');
   }
@@ -246,6 +242,7 @@ class ListViewBuilderTerms extends StatelessWidget {
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
+      mainAxisSize: MainAxisSize.max,
       children: [
         controller.isSearching
             ? Container()
@@ -253,107 +250,111 @@ class ListViewBuilderTerms extends StatelessWidget {
                 'Terms ${controller.currentTermCount}',
                 style: textStyleHeadline,
               ),
-        ListView.builder(
-          physics: const ScrollPhysics(parent: NeverScrollableScrollPhysics()),
-          shrinkWrap: true,
-          itemCount: controller.currentGlossaryDocuments.length,
-          itemBuilder: (context, index) {
-            TermModel term = TermModel.fromDocumentSnapshot(
-                controller.currentGlossaryDocuments[index]);
-            return Slidable(
-              direction: Axis.horizontal,
-              actionPane: const SlidableScrollActionPane(),
-              actions: [
-                IconSlideAction(
-                  color: Colors.red,
-                  caption: 'Delete',
-                  icon: Icons.delete_forever,
-                  onTap: () {
-                    showDialog(
-                      context: context,
-                      builder: (context) {
-                        return AlertDialog(
-                          title: const Text(
-                              'Are you sure you want to delete this term?'),
-                          actions: [
-                            ElevatedButton(
-                                onPressed: () {
-                                  Navigator.of(context).pop();
-                                },
-                                child: const Text('Cancel')),
-                            ElevatedButton(
-                                onPressed: () async {
-                                  controller.isLoading = true;
-                                  await controller
-                                      .currentGlossaryDocuments[index].reference
-                                      .delete()
-                                      .onError((error, stackTrace) {});
-                                  Navigator.of(context).pop();
-                                  controller.isLoading = false;
-                                },
-                                child: const Text('Delete'))
-                          ],
-                        );
-                      },
-                    );
-                  },
-                ),
-              ],
-              child: ListTile(
-                trailing: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    IconButton(
-                        onPressed: () {
+        SizedBox(
+          height: double.maxFinite * 0.90,
+          child: CustomScrollView(
+            physics: const NeverScrollableScrollPhysics(),
+            slivers: [
+              SliverList(
+                delegate: SliverChildBuilderDelegate((context, index) {
+                  TermModel term = TermModel.fromDocumentSnapshot(
+                      controller.currentGlossaryDocuments[index]);
+                  return Slidable(
+                    direction: Axis.horizontal,
+                    actionPane: const SlidableScrollActionPane(),
+                    actions: [
+                      IconSlideAction(
+                        color: Colors.red,
+                        caption: 'Delete',
+                        icon: Icons.delete_forever,
+                        onTap: () {
                           showDialog(
-                              context: context,
-                              builder: (context) {
-                                return DialogAddNewTerm(
-                                  term: term,
-                                  emptyTerm: false,
-                                  termBackUp: term.term,
-                                );
-                              });
+                            context: context,
+                            builder: (context) {
+                              return AlertDialog(
+                                title: const Text(
+                                    'Are you sure you want to delete this term?'),
+                                actions: [
+                                  ElevatedButton(
+                                      onPressed: () {
+                                        Navigator.of(context).pop();
+                                      },
+                                      child: const Text('Cancel')),
+                                  ElevatedButton(
+                                      onPressed: () async {
+                                        controller.isLoading = true;
+                                        await controller
+                                            .currentGlossaryDocuments[index]
+                                            .reference
+                                            .delete()
+                                            .onError((error, stackTrace) {});
+                                        Navigator.of(context).pop();
+                                        controller.isLoading = false;
+                                      },
+                                      child: const Text('Delete'))
+                                ],
+                              );
+                            },
+                          );
                         },
-                        icon: const Icon(Icons.edit_outlined)),
-                    // IconButton(
-                    //   onPressed: () {
-                    //     showDialog(
-                    //         context: context,
-                    //         builder: (context) {
-                    //           return AlertDialog(
-                    //             title: const Text(
-                    //                 'Are you sure you want to delete this term?'),
-                    //             actions: [
-                    //               ElevatedButton(
-                    //                   onPressed: () {
-                    //                     Navigator.of(context).pop();
-                    //                   },
-                    //                   child: const Text('Cancel')),
-                    //               ElevatedButton(
-                    //                   onPressed: () async {
-                    //                     await controller
-                    //                         .currentGlossaryDocuments[index].reference
-                    //                         .delete();
-                    //                     Navigator.of(context).pop();
-                    //                   },
-                    //                   child: const Text('Delete'))
-                    //             ],
-                    //           );
-                    //         });
-                    //   },
-                    //   icon: const Icon(Icons.delete_forever_rounded),
-                    // )
-                    IconButtonFavoriteTerm(controller: controller, term: term)
-                  ],
-                ),
-                // leading: Icon(controller.termIconAsignner(term.type)),
-                title: Text(term.term),
-                subtitle: Text(term.answer),
+                      ),
+                    ],
+                    child: ListTileTerm(term: term, controller: controller),
+                  );
+                }, childCount: controller.currentGlossaryDocuments.length),
               ),
-            );
-          },
+            ],
+          ),
         ),
+        // ListView.builder(
+        //   physics: const ScrollPhysics(parent: NeverScrollableScrollPhysics()),
+        //   itemCount: controller.currentGlossaryDocuments.length,
+        //   itemBuilder: (context, index) {
+        //     TermModel term = TermModel.fromDocumentSnapshot(
+        //         controller.currentGlossaryDocuments[index]);
+        //     return Slidable(
+        //       direction: Axis.horizontal,
+        //       actionPane: const SlidableScrollActionPane(),
+        //       actions: [
+        //         IconSlideAction(
+        //           color: Colors.red,
+        //           caption: 'Delete',
+        //           icon: Icons.delete_forever,
+        //           onTap: () {
+        //             showDialog(
+        //               context: context,
+        //               builder: (context) {
+        //                 return AlertDialog(
+        //                   title: const Text(
+        //                       'Are you sure you want to delete this term?'),
+        //                   actions: [
+        //                     ElevatedButton(
+        //                         onPressed: () {
+        //                           Navigator.of(context).pop();
+        //                         },
+        //                         child: const Text('Cancel')),
+        //                     ElevatedButton(
+        //                         onPressed: () async {
+        //                           controller.isLoading = true;
+        //                           await controller
+        //                               .currentGlossaryDocuments[index].reference
+        //                               .delete()
+        //                               .onError((error, stackTrace) {});
+        //                           Navigator.of(context).pop();
+        //                           controller.isLoading = false;
+        //                         },
+        //                         child: const Text('Delete'))
+        //                   ],
+        //                 );
+        //               },
+        //             );
+        //           },
+        //         ),
+        //       ],
+        //       child: ListTileTerm(term: term, controller: controller),
+        //     );
+        //   },
+        // ),
       ],
     );
   }
@@ -411,196 +412,6 @@ class IconButtonFavoriteTerm extends StatelessWidget {
               : Theme.of(context).colorScheme.onBackground,
         ));
   }
-}
-
-class DialogStartButton extends StatefulWidget {
-  const DialogStartButton({Key? key}) : super(key: key);
-
-  @override
-  State<DialogStartButton> createState() => _DialogStartButtonState();
-}
-
-class _DialogStartButtonState extends State<DialogStartButton> {
-  @override
-  Widget build(BuildContext context) {
-    Controller controller = Provider.of<Controller>(context);
-    final textStyleTheme = Theme.of(context).textTheme.headline6;
-    return Dialog(
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(15),
-        ),
-        child: Padding(
-          padding: const EdgeInsets.all(30.0),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Text(
-                'Select an option',
-                style: textStyleTheme,
-              ),
-              const SizedBox(height: 30),
-              controller.selectedTags.isEmpty
-                  ? Container()
-                  : const Text(
-                      'Exam and flash cards will start with the currently applied filters, click the button to clear the tags and use all the terms'),
-              controller.selectedTags.isEmpty
-                  ? Container()
-                  : ElevatedButton(
-                      onPressed: () {
-                        controller.selectedTags.clear();
-                        controller.useFavoriteTerms = false;
-                        controller.notifyNoob();
-                        setState(() {});
-                      },
-                      child: const Text('Clear filters')),
-              const SizedBox(
-                height: 25,
-              ),
-
-              //old switch selector
-              // Row(
-              //   mainAxisAlignment: MainAxisAlignment.center,
-              //   children: [
-              //     Text(
-              //       'No',
-              //       style: TextStyle(
-              //           color: controller.useFilteredTerms ? pLight : Colors.black),
-              //     ),
-              //     Switch(
-              //         value: controller.useFilteredTerms,
-              //         onChanged: (onChanged) {
-              //           controller.useFilteredTerms = onChanged;
-              //           setState(() {});
-              //         }),
-              //     Text(
-              //       'Yes',
-              //       style: TextStyle(
-              //           color: controller.useFilteredTerms ? Colors.black : pLight),
-              //     ),
-              //   ],
-              // ),
-
-              const Text('Select the question and answer configuration'),
-              // Row(
-              //   crossAxisAlignment: CrossAxisAlignment.stretch,
-              //   mainAxisSize: MainAxisSize.min,
-              //   mainAxisAlignment: MainAxisAlignment.center,
-              //   children: [
-              RadioListTile<ExamType>(
-                title: const Text('Use Terms'),
-                value: ExamType.useTerms,
-                groupValue: controller.examType,
-                onChanged: (ExamType? value) {
-                  setState(() {
-                    controller.examType = value!;
-                  });
-                },
-              ),
-
-              RadioListTile<ExamType>(
-                title: const Text('Use Answers'),
-                value: ExamType.useAnswers,
-                groupValue: controller.examType,
-                onChanged: (ExamType? value) {
-                  setState(() {
-                    controller.examType = value!;
-                  });
-                },
-              ),
-
-              RadioListTile<ExamType>(
-                title: const Text('Mixed'),
-                value: ExamType.mixed,
-                groupValue: controller.examType,
-                onChanged: (ExamType? value) {
-                  setState(() {
-                    controller.examType = value!;
-                  });
-                },
-              ),
-              //   ],
-              // ),
-
-              const SizedBox(
-                height: 20,
-              ),
-              ElevatedButton(
-                onPressed: () {
-                  if (controller.currentGlossaryDocuments.isEmpty) {
-                    Fluttertoast.showToast(
-                        msg:
-                            'There is not terms in the current glossary or with the applied filters');
-                    return;
-                  }
-                  navigateToExam(
-                    'exam',
-                    context,
-                    controller,
-                  );
-                },
-                child: const Text('Open Question Exam'),
-              ),
-
-              controller.currentGlossaryDocuments.length < 4
-                  ? Container()
-                  : ElevatedButton(
-                      onPressed: () {
-                        if (controller.currentGlossaryDocuments.isEmpty) {
-                          Fluttertoast.showToast(
-                              msg:
-                                  'There is not terms in the current glossary or with the applied filters');
-                          return;
-                        }
-                        navigateToExam(
-                          'multipleOption',
-                          context,
-                          controller,
-                        );
-                      },
-                      child: const Text('Multiple Option Exam'),
-                    ),
-
-              ElevatedButton(
-                  onPressed: () {
-                    if (controller.currentGlossaryDocuments.isEmpty) {
-                      Fluttertoast.showToast(
-                          msg:
-                              'There is not terms in the current glossary or with the applied filters');
-                      return;
-                    }
-                    navigateToExam(
-                      'flashCards',
-                      context,
-                      controller,
-                    );
-                  },
-                  child: const Text('Flash Cards')),
-              OutlinedButton(
-                onPressed: () {
-                  Navigator.of(context).pop();
-                },
-                child: const Text('Cancel'),
-              ),
-            ],
-          ),
-        ));
-  }
-}
-
-navigateToExam(
-  String type,
-  BuildContext context,
-  Controller controller,
-) {
-  Navigator.of(context).pop();
-  controller.resetControllerVars();
-  controller.generateCurrentTermsList();
-
-  Navigator.of(context).pushNamed(ExamPage.routeName,
-      arguments: ExamArguments(
-        examType: type,
-      ));
 }
 
 class DialogAddNewTerm extends StatefulWidget {

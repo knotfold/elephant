@@ -28,83 +28,27 @@ AppBar myAppBar(
               },
               icon: const Icon(Icons.settings_applications_outlined))
           : Container(),
-      // type == 'glossary'
-      //     ? IconButton(
-      //         onPressed: () {
-      //           showSearch(
-      //             context: context,
-      //             delegate: CustomSearchDelegate(),
-      //           );
-      //         },
-      //         icon: const Icon(Icons.search))
-      //     : Container(),
-      // type == 'glossary'
-      //     ? IconButton(
-      //         onPressed: () {
-      //           showDialog(
-      //               context: context,
-      //               builder: (context) => const DialogStartButton());
-      //         },
-      //         icon: const Icon(Icons.play_circle_outline_rounded))
-      //     : Container(),
-      // type == 'glossary'
-      //     ? IconButton(
-      //         onPressed: () {
-      //           Navigator.of(context).pushNamed('/filterGlossaryTermsPage');
-      //         },
-      //         icon: const Icon(Icons.filter_list))
-      //     : Container(),
       type == 'Difficult Terms'
           ? IconButton(
               onPressed: () {
                 navigateToDifficultExam('difficultExam', context, controller);
               },
-              icon: const Icon(Icons.play_circle_outline_outlined))
+              icon: const Icon(Icons.play_circle_outline_outlined),
+            )
           : Container(),
       IconButton(
           onPressed: () {
-            ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-                duration: Duration(seconds: 5),
-                content: ListView(
-                  shrinkWrap: true,
-                  children: [
-                    ListTile(
-                      title: Text('Filter'),
-                      leading: Icon(
-                        Icons.filter_list,
-                        color: colorScheme.onBackground,
-                      ),
-                    ),
-                    ListTile(
-                      title: Text('Difficult Terms'),
-                      leading: Icon(
-                        Icons.donut_large_rounded,
-                        color: colorScheme.onBackground,
-                      ),
-                    ),
-                    ListTile(
-                      title: Text('Exam'),
-                      leading: Icon(
-                        Icons.play_circle_outline_outlined,
-                        color: colorScheme.onBackground,
-                      ),
-                    ),
-                    ListTile(
-                      title: Text('Search'),
-                      leading: Icon(
-                        Icons.search,
-                        color: colorScheme.onBackground,
-                      ),
-                    ),
-                    ListTile(
-                      title: Text('Settings'),
-                      leading: Icon(
-                        Icons.settings,
-                        color: colorScheme.onBackground,
-                      ),
-                    ),
-                  ],
-                )));
+            Widget toShowDialog;
+            switch (type) {
+              case 'home':
+                toShowDialog = TutorialHome();
+                break;
+
+              default:
+                toShowDialog = SimpleDialog();
+                break;
+            }
+            showDialog(context: context, builder: (context) => toShowDialog);
           },
           icon: const Icon(Icons.help_outline_rounded)),
     ],
@@ -117,13 +61,80 @@ navigateToDifficultExam(
   Controller controller,
 ) {
   controller.resetControllerVars();
-  controller.generateCurrentTermsList();
+
   controller.generateDifficultTermList();
   Navigator.of(context).pop();
   Navigator.of(context).pushNamed(ExamPage.routeName,
       arguments: ExamArguments(
         examType: type,
       ));
+}
+
+class ListTileTerm extends StatelessWidget {
+  const ListTileTerm({
+    Key? key,
+    required this.term,
+    required this.controller,
+  }) : super(key: key);
+
+  final TermModel term;
+  final Controller controller;
+
+  @override
+  Widget build(BuildContext context) {
+    return ListTile(
+      trailing: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          IconButton(
+              onPressed: () {
+                showDialog(
+                    context: context,
+                    builder: (context) {
+                      return DialogAddNewTerm(
+                        term: term,
+                        emptyTerm: false,
+                        termBackUp: term.term,
+                      );
+                    });
+              },
+              icon: const Icon(Icons.edit_outlined)),
+          // IconButton(
+          //   onPressed: () {
+          //     showDialog(
+          //         context: context,
+          //         builder: (context) {
+          //           return AlertDialog(
+          //             title: const Text(
+          //                 'Are you sure you want to delete this term?'),
+          //             actions: [
+          //               ElevatedButton(
+          //                   onPressed: () {
+          //                     Navigator.of(context).pop();
+          //                   },
+          //                   child: const Text('Cancel')),
+          //               ElevatedButton(
+          //                   onPressed: () async {
+          //                     await controller
+          //                         .currentGlossaryDocuments[index].reference
+          //                         .delete();
+          //                     Navigator.of(context).pop();
+          //                   },
+          //                   child: const Text('Delete'))
+          //             ],
+          //           );
+          //         });
+          //   },
+          //   icon: const Icon(Icons.delete_forever_rounded),
+          // )
+          IconButtonFavoriteTerm(controller: controller, term: term)
+        ],
+      ),
+      // leading: Icon(controller.termIconAsignner(term.type)),
+      title: Text(term.term),
+      subtitle: Text(term.answer),
+    );
+  }
 }
 
 class ErrorConnection extends StatelessWidget {
@@ -198,6 +209,7 @@ class GlossaryCard extends StatelessWidget {
     // TODO: implement build
     return GestureDetector(
       onTap: () {
+        controller.useFavoriteTerms = false;
         controller.resetControllerVars();
         controller.currentGlossary = glossary;
         Navigator.of(context).pushNamed('/glossaryPage');
@@ -244,6 +256,36 @@ class GlossaryCard extends StatelessWidget {
             ],
           ),
         ),
+      ),
+    );
+  }
+}
+
+class TermTypeDisplayText extends StatelessWidget {
+  const TermTypeDisplayText({
+    Key? key,
+    required this.colorScheme,
+    required this.controller,
+    required this.widget,
+    required this.textStyleTermType,
+  }) : super(key: key);
+
+  final ColorScheme colorScheme;
+  final Controller controller;
+  final FlashCard widget;
+  final TextStyle? textStyleTermType;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(8),
+      decoration: BoxDecoration(
+        borderRadius: const BorderRadius.all(Radius.circular(15)),
+        border: Border.all(color: colorScheme.onBackground),
+      ),
+      child: Text(
+        controller.termTypeToString(widget.term),
+        style: textStyleTermType,
       ),
     );
   }

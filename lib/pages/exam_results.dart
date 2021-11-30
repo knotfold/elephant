@@ -39,7 +39,6 @@ class ExamResultPage extends StatelessWidget {
       onWillPop: () async {
         if (controller.isLoading) return false;
         controller.resetControllerVars();
-        controller.generateCurrentTermsList();
         controller.generateDifficultTermList();
         return true;
       },
@@ -66,7 +65,7 @@ class ExamResultPage extends StatelessWidget {
               }
 
               if (!asyncSnapshot.data!) {
-                return ErrorConnection();
+                return const ErrorConnection();
               }
 
               return Padding(
@@ -161,12 +160,8 @@ class ExamResultPage extends StatelessWidget {
                           itemCount: rightTermsList.length,
                           itemBuilder: (context, index) {
                             TermModel term = rightTermsList[index];
-                            return ListTile(
-                              leading:
-                                  Icon(controller.termIconAsignner(term.type)),
-                              title: Text(term.term),
-                              subtitle: Text(term.answer),
-                            );
+                            return ListTileTerm(
+                                term: term, controller: controller);
                           }),
                     ],
                   ),
@@ -287,12 +282,15 @@ class ExamResultPage extends StatelessWidget {
       phrase = 'Very good';
     }
     if (totalPercentage > 89) {
-      phrase = 'Amazing';
+      phrase = 'Well done :)';
     }
     if (totalPercentage > 92) {
       phrase = 'Amazing';
     }
     if (totalPercentage > 96) {
+      phrase = 'The best';
+    }
+    if (totalPercentage >= 100) {
       phrase = 'Perfect';
     }
     return phrase;
