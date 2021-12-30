@@ -1,4 +1,3 @@
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:elephant/services/services.dart';
 import 'package:elephant/shared/colors.dart';
 import 'package:elephant/shared/widgets.dart';
@@ -8,10 +7,16 @@ import 'package:flutter/services.dart';
 import 'package:fluttertoast/fluttertoast.dart';
 import 'package:provider/provider.dart';
 
+/*this class in search on displaying a searchpage using the custom search delegate that flutter offers
+and searchs through the unfiltered term list to find a term by matching the written input with the term term
+if there happens to be none then lets the user know and offers the users a quick shortcut to add the new term*/
 class CustomSearchDelegate extends SearchDelegate {
   @override
+  /*the actions are displayed on the appbar, and for this widget we have a button to copy the
+  current user input to the clipboard and another one to clear the query */
   List<Widget>? buildActions(BuildContext context) {
     return [
+      //copies input to clipboard
       IconButton(
         onPressed: () {
           Clipboard.setData(ClipboardData(text: query)).then((_) {
@@ -21,27 +26,17 @@ class CustomSearchDelegate extends SearchDelegate {
         },
         icon: const Icon(Icons.copy),
       ),
+      //erases the query
       IconButton(
           onPressed: () {
             query = '';
           },
-          icon: Icon(Icons.cancel_outlined))
+          icon: const Icon(Icons.cancel_outlined))
     ];
   }
 
-  // @override
-  // String get searchFieldLabel => 'Example: Hello';
-
-  // Future<List<DocumentSnapshot>> buildSearchList(
-  //     List<DocumentSnapshot> documents) async {
-  //   List<DocumentSnapshot> filteredDocuments = [];
-  //   documents.forEach((document) {
-  //     if (document['usuarioSearch'].contains(query.toLowerCase())) {
-  //       filteredDocuments.add(document);
-  //     }
-  //   });
-  //   return filteredDocuments;
-  // }
+  /*the theme of the appbar is in charge of making the this page match with our style, this is necessary
+  because the custom search delegator for some weird reason, does not follow the settings of the apptheme*/
   @override
   ThemeData appBarTheme(BuildContext context) {
     final ThemeData theme = Theme.of(context);
@@ -64,10 +59,11 @@ class CustomSearchDelegate extends SearchDelegate {
         textTheme: theme.textTheme.copyWith());
   }
 
+  //leading is the button that appears before the query input field and we used to pop the context
   @override
   Widget? buildLeading(BuildContext context) {
     Controller controller = Provider.of(context);
-    // TODO: implement buildLeading
+    //navigates back to the glossary page
     return IconButton(
       icon: const Icon(
         Icons.arrow_back_ios,
@@ -79,96 +75,125 @@ class CustomSearchDelegate extends SearchDelegate {
     );
   }
 
+  //builds the widget to be displayed in the body of the search page
   @override
   Widget buildResults(BuildContext context) {
     Controller controller = Provider.of(context);
-
-    final Stream<QuerySnapshot> _termStream =
-        controller.currentGlossary.documentReference
-            .collection('terms')
-            .where('term', isEqualTo: query.capitalize())
-            // .orderBy('term', descending: true)
-            .snapshots();
+    double deviceHeigth = MediaQuery.of(context).size.height;
+//if nothing is written then we display nothing
     if (query.isEmpty || query.trim() == '') {
       return Container();
     }
-
+//once something is written on the input field we start applying logic to the code
     return Column(
       mainAxisSize: MainAxisSize.max,
       children: [
-        StreamBuilder<QuerySnapshot>(
-            stream: _termStream,
-            builder: (context, snapshot) {
-              if (query.isEmpty || query.trim() == '') {
-                return Container();
-              }
-              if (snapshot.hasError) {
-                return const ErrorConnection();
-              }
+        //with a future builder we use the filterControllerList to find the terms that contain the written input
+        FutureBuilder<List<TermModel>>(
+          future: filterControllerList(controller),
+          builder: (context, snapshot) {
+            //checks that the query is not empty once again
+            if (query.isEmpty || query.trim() == '') {
+              return Container();
+            }
+            //displays an error on connection problems
+            if (snapshot.hasError) {
+              return const ErrorConnection();
+            }
 
-              if (!snapshot.hasData) {
-                return const Center(
-                  child: Padding(
-                    padding: EdgeInsets.all(25.0),
-                    child: CircularProgressIndicator(),
-                  ),
-                );
-              }
+            //if the snapshot doesnt have daya means that the function is still loading
+            if (!snapshot.hasData) {
+              return const Center(
+                child: Padding(
+                  padding: EdgeInsets.all(25.0),
+                  child: CircularProgressIndicator(),
+                ),
+              );
+            }
 
-              controller.currentFilteredGlossaryDocuments = snapshot.data!.docs;
+            //once the snapshot has data it recieves it as a list of terms
+            List<TermModel> searchedTermList = snapshot.data!;
 
-              // print('there is docs');
-
-              if (controller.currentFilteredGlossaryDocuments.isEmpty) {
-                return Center(
-                  child: Column(
-                    mainAxisSize: MainAxisSize.max,
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      const Center(
-                        child: Padding(
-                          padding: EdgeInsets.all(25.0),
-                          child: Text(
-                            'There is not terms matching the search query, click the button below to add the current search as a new term',
-                            textAlign: TextAlign.center,
-                          ),
+            /*if the list is empty then it displays a message letting the user know that the current glossary does not contain that 
+            term and shows the user a button with a shortcut to add the term */
+            if (searchedTermList.isEmpty) {
+              return Center(
+                child: Column(
+                  mainAxisSize: MainAxisSize.max,
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    const Center(
+                      child: Padding(
+                        padding: EdgeInsets.all(25.0),
+                        child: Text(
+                          'There is not terms matching the search query, click the button below to add the current search as a new term',
+                          textAlign: TextAlign.center,
                         ),
                       ),
-                      IconButton(
-                          onPressed: () {
-                            controller.isSearching = false;
-                            Navigator.of(context).pop();
-                            Clipboard.setData(ClipboardData(text: query))
-                                .then((_) {
-                              Fluttertoast.showToast(
-                                  msg: 'Term copied',
-                                  toastLength: Toast.LENGTH_LONG);
-                            });
+                    ),
+                    //button with a shortcut to add the term based on the current query
+                    IconButton(
+                        onPressed: () {
+                          controller.isSearching = false;
+                          Navigator.of(context).pop();
+                          Clipboard.setData(ClipboardData(text: query))
+                              .then((_) {
+                            Fluttertoast.showToast(
+                                msg: 'Term copied',
+                                toastLength: Toast.LENGTH_LONG);
+                          });
 
-                            showDialog(
-                                context: context,
-                                builder: (context) {
-                                  return DialogAddNewTerm(
-                                      term: TermModel(
-                                          query,
-                                          '',
-                                          Type.values.first.toString(),
-                                          'untagged'),
-                                      emptyTerm: true);
-                                });
-                          },
-                          icon: const Icon(Icons.add_circle_outline))
-                    ],
-                  ),
-                );
-              }
+                          showDialog(
+                              context: context,
+                              builder: (context) {
+                                return DialogAddNewTerm(
+                                    term: TermModel(
+                                        query,
+                                        '',
+                                        Type.values.first.toString(),
+                                        'untagged'),
+                                    emptyTerm: true);
+                              });
+                        },
+                        icon: const Icon(Icons.add_circle_outline))
+                  ],
+                ),
+              );
+            }
 
-              controller.isSearching = true;
+            //if the list is not empty then it displays it as a listview
 
-              return ListViewBuilderTerms(controller: controller);
-            }),
+            controller.isSearching = true;
+
+            return SizedBox(
+              height: deviceHeigth * 0.80,
+              child: SingleChildScrollView(
+                child: ListView.builder(
+                  physics: const NeverScrollableScrollPhysics(),
+                  shrinkWrap: true,
+                  itemCount: searchedTermList.length,
+                  itemBuilder: (context, index) {
+                    return ListTileTerm(
+                        term: searchedTermList[index], controller: controller);
+                  },
+                ),
+              ),
+            );
+          },
+        ),
       ],
     );
+  }
+
+  //function in charge of finding which terms contain or match the current query
+  Future<List<TermModel>> filterControllerList(Controller controller) async {
+    List<TermModel> filteredList = [];
+    for (var term in controller.unfilteredTermList) {
+      if (term.term.toLowerCase().contains(query.trim().toLowerCase())) {
+        filteredList.add(term);
+      }
+    }
+    return filteredList;
   }
 
   @override

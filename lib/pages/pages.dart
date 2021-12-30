@@ -1,3 +1,5 @@
+//exports all files on the pages folder
+
 export 'home.dart';
 export 'glossary.dart';
 export 'exam.dart';

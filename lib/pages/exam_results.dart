@@ -1,11 +1,12 @@
 import 'package:elephant/services/services.dart';
-import 'package:elephant/shared/widgets.dart';
 import 'package:flutter/material.dart';
 import 'package:elephant/shared/shared.dart';
-import 'package:fluttertoast/fluttertoast.dart';
 import 'package:provider/provider.dart';
 
+//This page is in charge of displaying the exam results. it show the user its total score and
+// the wrong and right answers
 class ExamResultArguments {
+  //checks if the exam was a difficult term exam or a normal exam
   final bool difficultTerms;
 
   ExamResultArguments({required this.difficultTerms});
@@ -20,31 +21,46 @@ class ExamResultPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    //Arguments recived when navigating to this page
     final args =
         ModalRoute.of(context)!.settings.arguments as ExamResultArguments;
+
     Controller controller = Provider.of<Controller>(context);
+    //gets the right answers
     List<TermModel> rightTermsList = controller.rightTerms;
+    //gets the wrong answers
     List<TermModel> wrongTermsList = controller.wrongTerms;
+    //gets the amount of right answers
     int rightAnswers = rightTermsList.length;
+    //gets the amount of wrong answers
     int wrongAnswers = wrongTermsList.length;
-    int total = args.difficultTerms
-        ? controller.difficultTermList.length
-        : controller.currentTermList.length;
+    //gets the total of questions
+    int total = controller.realFixedExamLength;
+    //gets the percentage obtained in the exam
     int totalPercentage = (rightAnswers / total * 100).round();
+    //text style for the mini headers on each list
     final textStyle1 = Theme.of(context).textTheme.headline6;
+    //text style for the final score
     final textStyleFinalScore = Theme.of(context).textTheme.headline6;
+    //text style for the 4 score
     final textStylescore4Scale = Theme.of(context).textTheme.headline1;
-    // TODO: implement build
+
     return WillPopScope(
+      //resets the controller variables
       onWillPop: () async {
         if (controller.isLoading) return false;
+        controller.fixedExamLength = 0;
+        controller.realFixedExamLength = 0;
         controller.resetControllerVars();
-        controller.generateDifficultTermList();
+
         return true;
       },
       child: Scaffold(
         appBar: myAppBar(context: context, type: 'Exam Results'),
+        //This future builder helps load the wrong and right answers to the database
+        //and helps with the scoring
         body: FutureBuilder<bool>(
+            //load the wrong and right answers to the database
             future: updateDifficultTerms(controller, args.difficultTerms),
             builder: (context, asyncSnapshot) {
               if (!asyncSnapshot.hasData) {
@@ -75,6 +91,7 @@ class ExamResultPage extends StatelessWidget {
                     mainAxisSize: MainAxisSize.min,
                     crossAxisAlignment: CrossAxisAlignment.center,
                     children: [
+                      //This texts show how many right answers and the total
                       Text(
                         'Score: $rightAnswers/$total',
                         style: textStyleFinalScore,
@@ -82,6 +99,7 @@ class ExamResultPage extends StatelessWidget {
                       const SizedBox(
                         height: 10,
                       ),
+                      //circle avatar to display the 4 score in a cool way.
                       CircleAvatar(
                         foregroundColor: secondaryColor,
                         backgroundColor: secondaryColor,
@@ -94,6 +112,7 @@ class ExamResultPage extends StatelessWidget {
                       const SizedBox(
                         height: 20,
                       ),
+                      //gives a phrase depending on the result obtained
                       Text(
                         assignPhrase(totalPercentage),
                         style: textStylescore4Scale,
@@ -101,6 +120,7 @@ class ExamResultPage extends StatelessWidget {
                       const SizedBox(
                         height: 100,
                       ),
+                      //its the title to the wrong answers list
                       Row(
                         crossAxisAlignment: CrossAxisAlignment.center,
                         mainAxisAlignment: MainAxisAlignment.center,
@@ -118,6 +138,7 @@ class ExamResultPage extends StatelessWidget {
                       const SizedBox(
                         height: 5,
                       ),
+                      //list of all the wrong answers
                       ListView.builder(
                           physics: const NeverScrollableScrollPhysics(),
                           shrinkWrap: true,
@@ -134,6 +155,7 @@ class ExamResultPage extends StatelessWidget {
                       const SizedBox(
                         height: 25,
                       ),
+                      //title row for the correct answers list
                       Row(
                         crossAxisAlignment: CrossAxisAlignment.center,
                         mainAxisAlignment: MainAxisAlignment.center,
@@ -154,15 +176,21 @@ class ExamResultPage extends StatelessWidget {
                       const SizedBox(
                         height: 5,
                       ),
+                      //list of all the correct answers
                       ListView.builder(
-                          physics: const NeverScrollableScrollPhysics(),
-                          shrinkWrap: true,
-                          itemCount: rightTermsList.length,
-                          itemBuilder: (context, index) {
-                            TermModel term = rightTermsList[index];
-                            return ListTileTerm(
-                                term: term, controller: controller);
-                          }),
+                        physics: const NeverScrollableScrollPhysics(),
+                        shrinkWrap: true,
+                        itemCount: rightTermsList.length,
+                        itemBuilder: (context, index) {
+                          TermModel term = rightTermsList[index];
+                          return ListTile(
+                            leading:
+                                Icon(controller.termIconAsignner(term.type)),
+                            title: Text(term.term),
+                            subtitle: Text(term.answer),
+                          );
+                        },
+                      )
                     ],
                   ),
                 ),
@@ -172,44 +200,45 @@ class ExamResultPage extends StatelessWidget {
     );
   }
 
+  //load the wrong and right answers to the database, recieves a controller and the difficultterms bool.
   Future<bool> updateDifficultTerms(
       Controller controller, bool difficultTerms) async {
+    //puts the app in loading state
     controller.isLoading = true;
+    //this will be returned to let know if the update was succesfull or no
     bool updated = true;
-    if (difficultTerms) {
-      for (var term in controller.rightTerms) {
-        await term.reference
-            .update({'difficultTerm': false}).onError((error, stackTrace) {
-          Fluttertoast.showToast(
-              msg: 'Error updating the results, check your connection',
-              toastLength: Toast.LENGTH_LONG);
-        }).timeout(const Duration(seconds: 30), onTimeout: () {
-          Fluttertoast.showToast(
-              msg: 'Error updating the results, check your connection',
-              toastLength: Toast.LENGTH_LONG);
-        });
+    //the updated bool awaits the result of the transaction
+    updated = await controller.currentGlossaryTransaction(() {
+      //if the exam is a difficult term exam, then it removes the user from the
+      //difficcult term list so the term can now be removed from it
+      if (difficultTerms) {
+        //loops through every term in the righttermlist
+        for (var term in controller.rightTerms) {
+          term.usersListDifficultTerms.remove('user');
+          controller.currentGlossary.termsMapList[term.listIndex] =
+              term.toMap();
+        }
       }
-      print('Difficult terms updated');
-    } else {
-      for (var term in controller.wrongTerms) {
-        await term.reference
-            .update({'difficultTerm': true}).onError((error, stackTrace) {
-          Fluttertoast.showToast(
-              msg: 'Error updating the results, check your connection',
-              toastLength: Toast.LENGTH_LONG);
-        }).timeout(const Duration(seconds: 30), onTimeout: () {
-          Fluttertoast.showToast(
-              msg: 'Error updating the results, check your connection',
-              toastLength: Toast.LENGTH_LONG);
-        });
+      //if the exam is not a difficult term exam, then it adds the user to the
+      //difficcult term list so it can be then displayed in the difficult term list
+      else {
+        //loops through every term in the wrongtermlist
+        for (var term in controller.wrongTerms) {
+          term.usersListDifficultTerms.add('user');
+          controller.currentGlossary.termsMapList[term.listIndex] =
+              term.toMap();
+        }
       }
-    }
+
+      controller.currentGlossary.usersInExamList.remove('user');
+    });
 
     controller.isLoading = false;
 
     return updated;
   }
 
+  //returns a string based on the totalpercentage of the obtained score
   String assing4Score(int totalPercentage) {
     String score4 = 'Z';
 
@@ -251,6 +280,8 @@ class ExamResultPage extends StatelessWidget {
     }
     return score4;
   }
+
+  //returns a string which is a phrase assigned based on the obtained score
 
   String assignPhrase(int totalPercentage) {
     String phrase = 'Error hehe';

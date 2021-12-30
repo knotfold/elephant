@@ -1,12 +1,9 @@
-import 'dart:math';
-
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:elephant/shared/widgets.dart';
-import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'package:elephant/shared/shared.dart';
 import 'package:elephant/services/services.dart';
-import 'package:elephant/shared/shared.dart';
+import 'package:fluttertoast/fluttertoast.dart';
 import 'package:provider/provider.dart';
 
 class Home extends StatefulWidget {
@@ -16,13 +13,16 @@ class Home extends StatefulWidget {
   State<Home> createState() => _HomeState();
 }
 
+//the home page is in charge of displaying all the glossaries ina grid view
 class _HomeState extends State<Home> {
   @override
   Widget build(BuildContext context) {
+    //stream of all the glossaries
     final Stream<QuerySnapshot> _glossaryStream =
         FirebaseFirestore.instance.collection('glossaries').snapshots();
 
     return Scaffold(
+      //floating action button that shows a dialog to add a new glossary
       floatingActionButton: FloatingActionButton(
         onPressed: () {
           dialogNewGlossary(context);
@@ -30,50 +30,7 @@ class _HomeState extends State<Home> {
         child: const Icon(Icons.add),
       ),
       appBar: myAppBar(context: context, type: 'home'),
-      body: Container(
-        padding: const EdgeInsets.all(5),
-        child: StreamBuilder<QuerySnapshot>(
-          stream: _glossaryStream,
-          builder: (context, snapshot) {
-            if (snapshot.hasError) {
-              return const ErrorConnection();
-            }
-
-            if (!snapshot.hasData) {
-              return const Center(
-                child: Padding(
-                  padding: EdgeInsets.all(25.0),
-                  child: CircularProgressIndicator(),
-                ),
-              );
-            }
-            List<QueryDocumentSnapshot> queryDocuments = snapshot.data!.docs;
-            if (queryDocuments.isEmpty) {
-              return Center(
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: const [
-                    Text(
-                      'You don not have glossaries in your library, try adding a new one clicking the + button below',
-                      textAlign: TextAlign.center,
-                    ),
-                  ],
-                ),
-              );
-            }
-            return GridView.builder(
-                itemCount: queryDocuments.length,
-                gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                    crossAxisCount: 3),
-                itemBuilder: (context, index) {
-                  return GlossaryCard(
-                      glossary: GlossaryModel.fromDocumentSnapshot(
-                    queryDocuments[index],
-                  ));
-                });
-          },
-        ),
-      ),
+      body: HomeBodyWidget(glossaryStream: _glossaryStream),
     );
   }
 
@@ -86,6 +43,82 @@ class _HomeState extends State<Home> {
   }
 }
 
+//body of the homepage
+class HomeBodyWidget extends StatelessWidget {
+  const HomeBodyWidget({
+    Key? key,
+    required Stream<QuerySnapshot<Object?>> glossaryStream,
+  })  : _glossaryStream = glossaryStream,
+        super(key: key);
+
+  //Stream of glossaries lol
+  final Stream<QuerySnapshot<Object?>> _glossaryStream;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(5),
+      //streambuilder that monitors all the glossaries
+      child: StreamBuilder<QuerySnapshot>(
+        stream: _glossaryStream,
+        builder: (context, snapshot) {
+          //if the snapshot has an error it displays an error widget
+          if (snapshot.hasError) {
+            return const ErrorConnection();
+          }
+
+          //if it doesn't have data means that is loading
+          if (!snapshot.hasData) {
+            return const Center(
+              child: Padding(
+                padding: EdgeInsets.all(25.0),
+                child: CircularProgressIndicator(),
+              ),
+            );
+          }
+
+          if (snapshot.connectionState.name == ' waiting') {
+            return const Center(
+              child: Padding(
+                padding: EdgeInsets.all(25.0),
+                child: CircularProgressIndicator(),
+              ),
+            );
+          }
+          //list of the snapshot docs
+          List<QueryDocumentSnapshot> queryDocuments = snapshot.data!.docs;
+          //if the documents list is empty, means there is not glossaries added
+          if (queryDocuments.isEmpty) {
+            return Center(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: const [
+                  Text(
+                    'You don not have glossaries in your library, try adding a new one clicking the + button below',
+                    textAlign: TextAlign.center,
+                  ),
+                ],
+              ),
+            );
+          }
+
+          //if the list is not empty then it show a grid view of the current glossaries
+          return GridView.builder(
+              itemCount: queryDocuments.length,
+              gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                  crossAxisCount: 3),
+              itemBuilder: (context, index) {
+                return GlossaryCard(
+                    glossary: GlossaryModel.fromDocumentSnapshot(
+                  queryDocuments[index],
+                ));
+              });
+        },
+      ),
+    );
+  }
+}
+
 class DialogAddNewGlossary extends StatefulWidget {
   const DialogAddNewGlossary({Key? key}) : super(key: key);
 
@@ -93,12 +126,17 @@ class DialogAddNewGlossary extends StatefulWidget {
   State<DialogAddNewGlossary> createState() => _DialogAddNewGlossaryState();
 }
 
+//dialog to add new glossary
 class _DialogAddNewGlossaryState extends State<DialogAddNewGlossary> {
+  //bool in charge of displaying if something is loading
   bool isLoading = false;
+  //reference of the glossaries collection
   CollectionReference glossaries =
       FirebaseFirestore.instance.collection('glossaries');
+  //variable that will store the new glossary name
   late String newGlossaryName;
 
+  //form key that controls the form state
   final formKey = GlobalKey<FormState>();
   @override
   Widget build(BuildContext context) {
@@ -106,6 +144,7 @@ class _DialogAddNewGlossaryState extends State<DialogAddNewGlossary> {
 
     Controller controller = Provider.of<Controller>(context);
     return WillPopScope(
+      //doesn't allow to pop the scope if it is loading
       onWillPop: () async {
         return isLoading ? false : true;
       },
@@ -140,6 +179,7 @@ class _DialogAddNewGlossaryState extends State<DialogAddNewGlossary> {
                       ),
                     ),
                     validator: (value) {
+                      //validates that the inputfield is not empty
                       if (value!.trim() == '') {
                         return 'Please give a name to the glossary';
                       }
@@ -148,8 +188,8 @@ class _DialogAddNewGlossaryState extends State<DialogAddNewGlossary> {
                       newGlossaryName = value!;
                     },
                   ),
+                  //if it is loading it hides the buttons with a progress indicator to avoid more usir inputs
                   isLoading
-                      // ignore: dead_code
                       ? const CircularProgressIndicator()
                       : ButtonBar(
                           children: [
@@ -174,9 +214,29 @@ class _DialogAddNewGlossaryState extends State<DialogAddNewGlossary> {
                                       'user': controller.user.username,
                                       'tags': ['untagged']
                                     })
+                                    .catchError((onError) {
+                                      isLoading = false;
+                                      setState(() {});
+                                      Navigator.of(context).pop();
+                                      Fluttertoast.showToast(
+                                          msg:
+                                              'Error adding the glossary, check your connection',
+                                          toastLength: Toast.LENGTH_LONG);
+                                    })
+                                    // ignore: avoid_print
                                     .then((value) => print('User Added'))
-                                    .catchError(
-                                        (onError) => print('error ocurred'));
+                                    .timeout(
+                                      const Duration(seconds: 30),
+                                      onTimeout: () {
+                                        isLoading = false;
+                                        setState(() {});
+                                        Navigator.of(context).pop();
+                                        Fluttertoast.showToast(
+                                            msg:
+                                                'Error adding the glossary, check your connection',
+                                            toastLength: Toast.LENGTH_LONG);
+                                      },
+                                    );
                                 setState(() {
                                   isLoading = false;
                                 });

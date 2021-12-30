@@ -1,16 +1,21 @@
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:elephant/shared/shared.dart';
 import 'package:flutter/material.dart';
 import 'package:elephant/services/services.dart';
 import 'package:elephant/pages/pages.dart';
-import 'package:fluttertoast/fluttertoast.dart';
 import 'package:provider/provider.dart';
 
+/*this files contains a lot of the widgets that are used in the app, specially widgets that can be used in 
+  different instances of the app multiple times */
+
+//the appbar widget is the most replicated one and it recieves a title, the context and the type on its constructor.
+//the title is just a string to display as the title of the appbar
+//and the type is an identifier of the page we are currently at
 AppBar myAppBar(
     {String? title, required BuildContext context, required String type}) {
   Controller controller = Provider.of<Controller>(context);
-  ColorScheme colorScheme = Theme.of(context).colorScheme;
+  //depending on the type of the page the appbar displays different options
   return AppBar(
+    //if the type is home, then it shows the icon of the app
     leading: type == 'home'
         ? const Padding(
             padding: EdgeInsets.only(left: 10.0),
@@ -19,8 +24,11 @@ AppBar myAppBar(
             ),
           )
         : null,
+    //it always displays the title recieved in the constructor and if it happens to be null
+    //just displays the name of the app
     title: Text(title ?? 'Elephant'),
     actions: [
+      //if the type is home it show a button to navigate to the settingspage
       type == 'home'
           ? IconButton(
               onPressed: () {
@@ -28,24 +36,67 @@ AppBar myAppBar(
               },
               icon: const Icon(Icons.settings_applications_outlined))
           : Container(),
+      /*if the type is difficult terms, it shows a special button that lets you navigate to the difficult exam*/
       type == 'Difficult Terms'
           ? IconButton(
               onPressed: () {
-                navigateToDifficultExam('difficultExam', context, controller);
+                showDialog(
+                    context: context,
+                    builder: (context) {
+                      return SimpleDialog(
+                        children: [
+                          ButtonBar(
+                            children: [
+                              ElevatedButton(
+                                onPressed: () {
+                                  navigateToDifficultExam(
+                                      'difficultExam', context, controller);
+                                },
+                                child: const Text('Exam'),
+                              ),
+                              ElevatedButton(
+                                onPressed: () {
+                                  navigateToDifficultExam('difficultFlashCards',
+                                      context, controller);
+                                },
+                                child: const Text('Flash cards'),
+                              ),
+                            ],
+                          )
+                        ],
+                      );
+                    });
               },
               icon: const Icon(Icons.play_circle_outline_outlined),
             )
           : Container(),
+      /*this last action is used to display an iconbutton that leads you to the tutorial dialog, based on the 
+      page type it displays the right tutorial*/
       IconButton(
           onPressed: () {
             Widget toShowDialog;
             switch (type) {
+              case 'themeChooser':
+                toShowDialog = const TutorialThemePage();
+                break;
+              case 'filterTermsPage':
+                toShowDialog = const TutorialFilterPage();
+                break;
+              case 'examSettings':
+                toShowDialog = const TutorialExamPreparationPage();
+                break;
+              case 'Difficult Terms':
+                toShowDialog = const TutorialDifficultTerms();
+                break;
+              case 'glossary':
+                toShowDialog = const TutorialGlossary();
+                break;
               case 'home':
-                toShowDialog = TutorialHome();
+                toShowDialog = const TutorialHome();
                 break;
 
               default:
-                toShowDialog = SimpleDialog();
+                toShowDialog = const SimpleDialog();
                 break;
             }
             showDialog(context: context, builder: (context) => toShowDialog);
@@ -55,6 +106,8 @@ AppBar myAppBar(
   );
 }
 
+/*function used to navigate to the difficult exam and it also resets some of the controller vars for proper utilization
+and also generates a difficulttermlist which is the one to be used in the exam*/
 navigateToDifficultExam(
   String type,
   BuildContext context,
@@ -70,6 +123,9 @@ navigateToDifficultExam(
       ));
 }
 
+/*displays the term in a list tile this is used in a lot of places of the app
+so modfiying it influences a lot of the app, gotta be careful, it has a lot of advantages
+but might be sacrifice some customization*/
 class ListTileTerm extends StatelessWidget {
   const ListTileTerm({
     Key? key,
@@ -77,15 +133,23 @@ class ListTileTerm extends StatelessWidget {
     required this.controller,
   }) : super(key: key);
 
+  //recieves the term to be displayed as its constructor
   final TermModel term;
   final Controller controller;
 
   @override
   Widget build(BuildContext context) {
     return ListTile(
+      //idk what is the visual denstity for, i think it makes the tile more wide
+      visualDensity: const VisualDensity(horizontal: -4),
+      //content padding lol
+      contentPadding: const EdgeInsets.all(2),
       trailing: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
+          /*this button is the edit button and is in charge of displaying the edit dialog this time the dialog recieves 
+          the term in the constructor which means that it is not an empty term and this makes the dialog show different options
+          and execute different functions it is crucial to set the emptyterm bool to false so the correct options are displayed */
           IconButton(
               onPressed: () {
                 showDialog(
@@ -99,50 +163,27 @@ class ListTileTerm extends StatelessWidget {
                     });
               },
               icon: const Icon(Icons.edit_outlined)),
-          // IconButton(
-          //   onPressed: () {
-          //     showDialog(
-          //         context: context,
-          //         builder: (context) {
-          //           return AlertDialog(
-          //             title: const Text(
-          //                 'Are you sure you want to delete this term?'),
-          //             actions: [
-          //               ElevatedButton(
-          //                   onPressed: () {
-          //                     Navigator.of(context).pop();
-          //                   },
-          //                   child: const Text('Cancel')),
-          //               ElevatedButton(
-          //                   onPressed: () async {
-          //                     await controller
-          //                         .currentGlossaryDocuments[index].reference
-          //                         .delete();
-          //                     Navigator.of(context).pop();
-          //                   },
-          //                   child: const Text('Delete'))
-          //             ],
-          //           );
-          //         });
-          //   },
-          //   icon: const Icon(Icons.delete_forever_rounded),
-          // )
           IconButtonFavoriteTerm(controller: controller, term: term)
         ],
       ),
-      // leading: Icon(controller.termIconAsignner(term.type)),
+      /*the leading can show 2 options based on the sorting order chosen by the user*/
+      leading: Text(
+        controller.orderAlphabetically
+            ? term.term.characters.first
+            : term.listIndex.toString(),
+      ),
       title: Text(term.term),
       subtitle: Text(term.answer),
     );
   }
 }
 
+//this widget is used to display errors in the app, this needs to be further modified to make it look more profesional
 class ErrorConnection extends StatelessWidget {
   const ErrorConnection({Key? key}) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
-    // TODO: implement build
     return Center(
       child: Column(
         children: const [
@@ -164,6 +205,7 @@ class ErrorConnection extends StatelessWidget {
   }
 }
 
+//this checkboxlistags is used to add and remove tags from the currently selected filters
 class CheckBoxListTags extends StatelessWidget {
   const CheckBoxListTags({
     Key? key,
@@ -196,6 +238,8 @@ class CheckBoxListTags extends StatelessWidget {
   }
 }
 
+/*this is the card displaying on the homepage of the app and displays the glossaries, it is fair to say im not 
+tet convinced about this widget style */
 class GlossaryCard extends StatelessWidget {
   final GlossaryModel glossary;
   const GlossaryCard({
@@ -206,7 +250,6 @@ class GlossaryCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     Controller controller = Provider.of(context);
-    // TODO: implement build
     return GestureDetector(
       onTap: () {
         controller.useFavoriteTerms = false;
@@ -261,22 +304,21 @@ class GlossaryCard extends StatelessWidget {
   }
 }
 
+/*this widget takes the term type and just displays the text in a cool stlye, for example the Type.adjective would be
+just returned as adjective which makes it look cooler and better*/
 class TermTypeDisplayText extends StatelessWidget {
   const TermTypeDisplayText({
     Key? key,
-    required this.colorScheme,
-    required this.controller,
-    required this.widget,
-    required this.textStyleTermType,
+    required this.termModel,
   }) : super(key: key);
 
-  final ColorScheme colorScheme;
-  final Controller controller;
-  final FlashCard widget;
-  final TextStyle? textStyleTermType;
+  final TermModel termModel;
 
   @override
   Widget build(BuildContext context) {
+    Controller controller = Provider.of<Controller>(context);
+    final textStyleTermType = Theme.of(context).textTheme.subtitle2;
+    ColorScheme colorScheme = Theme.of(context).colorScheme;
     return Container(
       padding: const EdgeInsets.all(8),
       decoration: BoxDecoration(
@@ -284,7 +326,7 @@ class TermTypeDisplayText extends StatelessWidget {
         border: Border.all(color: colorScheme.onBackground),
       ),
       child: Text(
-        controller.termTypeToString(widget.term),
+        controller.termTypeToString(termModel),
         style: textStyleTermType,
       ),
     );

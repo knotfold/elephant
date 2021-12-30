@@ -9,6 +9,10 @@ import 'package:elephant/shared/shared.dart';
 import 'package:elephant/services/models.dart';
 import 'package:provider/provider.dart';
 
+//This page is in charge of displaying the exam to the user
+//it has a lot of widgets and gimmicks so it is a bit difficult to modify
+
+//the class requieres to recieve a examtype which dictates its fuctionality
 class ExamArguments {
   final String examType;
 
@@ -26,24 +30,48 @@ class ExamPage extends StatefulWidget {
 class _ExamPageState extends State<ExamPage> {
   @override
   Widget build(BuildContext context) {
+    //recieves the arguments of the constructor
     final args = ModalRoute.of(context)!.settings.arguments as ExamArguments;
     Controller controller = Provider.of<Controller>(context);
-
-    List<TermModel> termsList = args.examType == 'difficultExam'
+    //this list is in charge of telling the exam which terms is going to use,
+    //depending on its type it chooses from the difficultTermList or the
+    //currentTermslist which is the list specially made for the exam
+    List<TermModel> termsList = args.examType == 'difficultExam' ||
+            args.examType == 'difficultFlashCards'
         ? controller.difficultTermList
         : controller.currentTermList;
 
+    //lets the controller know if it is a difficult exam or no
     controller.difficultExam = args.examType == 'difficultExam';
 
+    //handles the real exam length, if the controller fixedLength is not
+    //equal to the termlist length and the fixedlength is not 0, this means that the exam
+    //has a custom length, there for it should display less terms so the exam length is the fixedlength
+    controller.realFixedExamLength =
+        termsList.length != controller.fixedExamLength &&
+                controller.fixedExamLength != 0
+            ? controller.fixedExamLength
+            : termsList.length;
     return WillPopScope(
       onWillPop: () async {
-        controller.currentTermList.clear();
+        //if the scope will be poped it resets some vars in the controller and also runs a
+        //transaction to update the currentglossary users in exam status
+        //removing the user of the list, this meaning he is not inside an exam anymore
+        controller.fixedExamLength = 0;
+        controller.realFixedExamLength = 0;
+        controller.currentGlossaryTransaction(() {
+          controller.currentGlossary.usersInExamList.remove('user');
+        });
+
         return true;
       },
       child: Scaffold(
         appBar: AppBar(
           actions: [
-            args.examType == 'flashCards'
+            //if the exam is a flashCard type it show an special icon button in the appbar
+            //this icon button displays the list of terms in a dialog
+            args.examType == 'flashCards' ||
+                    args.examType == 'difficultFlashCards'
                 ? IconButton(
                     onPressed: () {
                       showDialog(
@@ -54,15 +82,19 @@ class _ExamPageState extends State<ExamPage> {
                             );
                           });
                     },
-                    icon: Icon(Icons.find_in_page))
+                    icon: const Icon(Icons.find_in_page))
                 : Container(),
           ],
-          title: Text(
-            args.examType.toUpperCase(),
+          //the titile of the appbar is the exam type lol, it shouldn't be like this
+          title: const Text(
+            'Exam',
           ),
         ),
+        //pageview builder that displays all the exam questions
         body: PageView.builder(
-            itemCount: termsList.length,
+            itemCount: controller.realFixedExamLength,
+            //checks if the exam is not a flashcard type exam and if it isn't
+            //disables the scrool physics
             physics: args.examType == 'exam' ||
                     args.examType == 'multipleOption' ||
                     args.examType == 'difficultExam'
@@ -70,31 +102,46 @@ class _ExamPageState extends State<ExamPage> {
                 : const ScrollPhysics(),
             controller: controller.pageControllerExam,
             itemBuilder: (context, index) {
+              //the pages of the exam
               Widget page;
+              //this switch allocates the right page type to the page widget based on the exam type
               switch (args.examType) {
+                //assigns the page widget an examcard witdget
                 case 'difficultExam':
                   page = ExamCard(
                     term: controller.difficultTermList[index],
                     index: index,
                   );
                   break;
+                //assigns the page widget a flashcard widget
+                case 'difficultFlashCards':
+                  page = FlashCard(
+                    term: controller.difficultTermList[index],
+                    page: index,
+                    length: controller.realFixedExamLength,
+                  );
+                  break;
+                //assigns the page witget an  examcard widget
                 case 'exam':
                   page = ExamCard(
                     term: termsList[index],
                     index: index,
                   );
                   break;
+                //assigns the page widget a flashcard widget
                 case 'flashCards':
                   page = FlashCard(
                     term: termsList[index],
                     page: index,
-                    length: termsList.length,
+                    length: controller.realFixedExamLength,
                   );
                   break;
+                //assigns the page widget an examCardMultipleOption widget
                 case 'multipleOption':
                   page = ExamCardMultipleOption(
                       term: termsList[index], indexPageController: index);
                   break;
+                // assigns the page widget an examcard widget by default
                 default:
                   page = ExamCard(
                     term: termsList[index],
@@ -111,6 +158,9 @@ class _ExamPageState extends State<ExamPage> {
 }
 
 class DialogFindTermIndex extends StatelessWidget {
+  //this dialog displays the list  of the flashcard exam and helps the user
+  //navigate the exam, it recieves the currently used list and works with the
+  //controller fixedexamlength
   final List<TermModel> termsList;
   const DialogFindTermIndex({Key? key, required this.termsList})
       : super(key: key);
@@ -119,11 +169,10 @@ class DialogFindTermIndex extends StatelessWidget {
   Widget build(BuildContext context) {
     Controller controller = Provider.of(context);
 
-    // TODO: implement build
     return Dialog(
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
       child: ListView.builder(
-        itemCount: termsList.length,
+        itemCount: controller.realFixedExamLength,
         itemBuilder: (context, index) {
           TermModel termModel = termsList[index];
           return ListTile(
@@ -131,13 +180,12 @@ class DialogFindTermIndex extends StatelessWidget {
             trailing: Text((index + 1).toString()),
             onTap: () {
               int ind = index;
-              nextPage(controller, index, true);
+              nextPage(controller, ind, true);
               Navigator.of(context).pop();
-              print(index);
             },
           );
         },
-        padding: EdgeInsets.all(20),
+        padding: const EdgeInsets.all(20),
       ),
     );
   }
@@ -163,14 +211,13 @@ class _FlashCardState extends State<FlashCard> {
     Controller controller = Provider.of<Controller>(context);
     final textStyleTerm = Theme.of(context).textTheme.headline2;
     final textStyleLongTerm = Theme.of(context).textTheme.headline4;
-    final textStyleTermType = Theme.of(context).textTheme.subtitle2;
-    ColorScheme colorScheme = Theme.of(context).colorScheme;
+    // final textStyleTermType = Theme.of(context).textTheme.subtitle2;
+    // ColorScheme colorScheme = Theme.of(context).colorScheme;
 
     // final textStyleAnswer = Theme.of(context).textTheme.headline6;
 
     int chars = widget.term.term.characters.length;
     bool useLongTextStyle = chars > 45;
-    // TODO: implement build
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 25),
       padding: const EdgeInsets.symmetric(horizontal: 1, vertical: 1),
@@ -201,10 +248,8 @@ class _FlashCardState extends State<FlashCard> {
                       IconButtonFavoriteTerm(
                           controller: controller, term: widget.term),
                       TermTypeDisplayText(
-                          colorScheme: colorScheme,
-                          controller: controller,
-                          widget: widget,
-                          textStyleTermType: textStyleTermType),
+                        termModel: widget.term,
+                      ),
                     ],
                   ),
                   const SizedBox(
@@ -221,9 +266,6 @@ class _FlashCardState extends State<FlashCard> {
                   uncoverText ? Text(widget.term.answer) : Container(),
                   const SizedBox(
                     height: 60,
-                  ),
-                  Row(
-                    children: [],
                   ),
                   Text(' ${widget.page + 1}/${widget.length}'),
                   // GestureDetector(
@@ -290,21 +332,27 @@ class _ExamCardState extends State<ExamCard> {
     final textStyleLongTerm = Theme.of(context).textTheme.headline4;
     int chars = widget.term.term.characters.length;
     bool useLongTextStyle = chars > 45;
-    // TODO: implement build
     return SingleChildScrollView(
       child: Padding(
         padding: const EdgeInsets.all(20.0),
         child: Form(
           key: formKey,
           child: Column(
+            mainAxisSize: MainAxisSize.min,
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  const Icon(Icons.face_rounded),
+                  // Icon(
+                  //   controller.termIconAsignner(widget.term.type),
+                  //   size: 40,
+                  // ),
                   IconButtonFavoriteTerm(
                       controller: controller, term: widget.term),
+                  TermTypeDisplayText(
+                    termModel: widget.term,
+                  ),
                 ],
               ),
               const SizedBox(
@@ -385,11 +433,7 @@ class _ExamCardState extends State<ExamCard> {
 
 bool checkIfLastPage(Controller controller, int index) {
   bool lastPage = true;
-  if (index !=
-      (controller.difficultExam
-              ? controller.difficultTermList.length
-              : controller.currentTermList.length) -
-          1) {
+  if (index != controller.realFixedExamLength - 1) {
     lastPage = false;
   }
   return lastPage;
@@ -402,8 +446,6 @@ void nextPage(Controller controller, int index, bool jump) {
   controller.pageControllerExam.animateToPage(page,
       duration: const Duration(milliseconds: 500), curve: Curves.easeIn);
 }
-
-makehamburgers(String hamburgername, int numberofhamburgers) {}
 
 void navigationInExam(
     {required BuildContext context,
@@ -425,6 +467,7 @@ void navigationInExam(
 // or based on answers, the same logic needs to be implemented for the flashcards and the open exams
 class ExamCardMultipleOption extends StatefulWidget {
   final TermModel term;
+  //used to controll the page index
   final int indexPageController;
 
   const ExamCardMultipleOption(
@@ -448,24 +491,13 @@ class _ExamCardMultipleOptionState extends State<ExamCardMultipleOption> {
 
     Controller controller = Provider.of(context);
 
-    // if (controller.testFromAnswers) {
-    //   useTerms = false;
-    //   answer = widget.term.term;
-    // } else if (controller.testFromTerms) {
-    //   answer = widget.term.answer;
-    // } else if (controller.mixTermsAnswers) {
-    //   int i = Random().nextInt(1);
-    //   if (i % 2 == 0) {
-    //     useTerms = true;
-    //     answer = widget.term.answer;
-    //   } else {
-    //     useTerms = false;
-    //     answer = widget.term.term;
-    //   }
-    // }
+    // the answer and options variables only get rebuild when the tilestatus is positive again, this status is handled in the answertile and
+    //it is set to negative when the tile is clicked and set to positive again on navigation.
+    //if the controller update star is set to true this means that the favorite status needs to be updated.
+    //there for the others stuff doesnt need to happen so if it is true it skips the if
+    //lastly if the options list is empty it just does it by default, this is basically and if in charge of
+    //building the multiple options for the multiple option exam
 
-    // the answer and options variable only get rebuild when the tilestatus is positive again, this status is handled in the answertile and
-    //it is negative when the tile is clicked and set to positive on navigation
     if (controller.tileStatus && !controller.updateStar || options.isEmpty) {
       switch (controller.examType) {
         case ExamType.useTerms:
@@ -489,22 +521,39 @@ class _ExamCardMultipleOptionState extends State<ExamCardMultipleOption> {
       options = multipleOptionMaker(controller, answer!, useTerms);
     }
 
-    //i dont like this
+    //when the widget launches sets the controller updatestar variable to false, this is to
+    //to let know the code that the favorite status has already been updated, and everything can
+    //function as needed
 
     controller.updateStar = false;
 
+    //this variable is the text to display during the exam, which is the guide text
     String textToDisplayVar = textToDisplay(widget.term, useTerms);
+    //this int gets the size of the text, depending on its amount of characters
+    //the text will be rezized
     int chars = textToDisplayVar.characters.length;
-    bool useLongTextStyle = chars > 45;
+    bool useLongTextStyle = chars > 40;
 
-    // TODO: implement build
     return Padding(
       padding: const EdgeInsets.all(10),
       child: Column(
         mainAxisSize: MainAxisSize.max,
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          IconButtonFavoriteTerm(controller: controller, term: widget.term),
+          //row that works as a guide for the person presenting the exam
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              // Icon(
+              //   controller.termIconAsignner(widget.term.type),
+              //   size: 40,
+              // ),
+              IconButtonFavoriteTerm(controller: controller, term: widget.term),
+              TermTypeDisplayText(
+                termModel: widget.term,
+              ),
+            ],
+          ),
           Flexible(
             child: Text(
               textToDisplayVar,
@@ -520,6 +569,7 @@ class _ExamCardMultipleOptionState extends State<ExamCardMultipleOption> {
           const SizedBox(
             height: 5,
           ),
+          //list vies builder of the different options for the question
           ListView.builder(
               padding: const EdgeInsets.all(15),
               shrinkWrap: true,
@@ -538,11 +588,17 @@ class _ExamCardMultipleOptionState extends State<ExamCardMultipleOption> {
   }
 }
 
+//the multiple option tile widget is the widget that handles the multiple option exam
+//options
 class MultipleOptionTile extends StatefulWidget {
+  //it recieves the answer, the term and the list of options that was generated previously when the
+  //multiple option page was being build. it also gets the index of the page and the controller?
   final String answer;
   final List<String> options;
+  //index of the options list
   final int index;
   final TermModel term;
+  //index of the current exam page
   final int indexPageController;
 
   const MultipleOptionTile(
@@ -559,12 +615,16 @@ class MultipleOptionTile extends StatefulWidget {
 }
 
 class _MultipleOptionTileState extends State<MultipleOptionTile> {
+  //this secondary color is used for the tile color
   Color color = secondaryColor;
   @override
   Widget build(BuildContext context) {
     Controller controller = Provider.of<Controller>(context);
-    // TODO: implement build
+    //this returns a listtile with different widgets and functionalities.
     return ListTile(
+      //if the tile status is true, this will not show a thing, but when it is clicked
+      //the tile states is set to false this allowing the tile to show if the answer
+      //is right or wrong based on the user input
       leading: controller.tileStatus
           ? const SizedBox(
               width: 1,
@@ -576,9 +636,14 @@ class _MultipleOptionTileState extends State<MultipleOptionTile> {
                   : Icons.cancel_outlined,
               color: controller.tileColor,
             ),
+      //is enable depending on the tilestatus
       enabled: controller.tileStatus,
       onTap: () {
+        //on tap imediately the tile status is set to false to calculate the results of the chosen answer
         controller.tileStatus = false;
+        //if the answer and the option match it gives the tile color the secondary color and adds the term to the rightterms list
+        //this list helps with the results of the exam
+        //if they do not match the color is set to red and the term is added to the wrong terms list
         if (widget.answer == widget.options[widget.index]) {
           controller.tileColor = secondaryColor;
           controller.rightTerms.add(widget.term);
@@ -587,8 +652,10 @@ class _MultipleOptionTileState extends State<MultipleOptionTile> {
           setState(() {});
           controller.wrongTerms.add(widget.term);
         }
+        //updates the controller variables
         controller.notifyNoob();
 
+        //timer that lets the user ccheck the answer results, after 3 seconds it automatically navigates to the next page
         Timer(const Duration(seconds: 3), () {
           controller.tileStatus = true;
 
@@ -603,49 +670,56 @@ class _MultipleOptionTileState extends State<MultipleOptionTile> {
   }
 }
 
+//returns a string depending on the useTerms bool which tells the code
+//to use the term as the display or the answer
 String textToDisplay(TermModel term, bool useTerms) {
   String text = useTerms ? term.term : term.answer;
 
   return text;
 }
 
+//makes multiple options for the exam, the answer is the answer for the questions and the terms
+//bool lets the code know if the list needs to be made with terms of with answers
 List<String> multipleOptionMaker(
-    Controller controller, String answer, bool terms) {
+    Controller controller, String answer, bool useAnswers) {
+  //generates a empty list to be filled with the different options
   List<String> options = [];
 
-  List<TermModel> currentTermList = controller.currentTermList;
+  //list created to have cleaner code
+  List<TermModel> currentTermList = controller.unfilteredTermList;
 
+  //the answer is added automatically to the list
   options.add(answer);
 
+  //this for is executed until the list has 4 strings to display
   for (int index = 0; index < 3; index++) {
+    //we get a randomIndex to get a random term from our list
     int randomIndex = Random().nextInt(currentTermList.length);
-    if (!terms) {
+    //if useAnawers is set to false this means we are using the termfield
+    // to fill our list
+    if (!useAnswers) {
+      //this if checks that the options doesnt contain already the same answer in case of it not containing it
+      //it adds the option to the list, if it is already there it rests the index value of the cycle to make it lap again
       if (!options.contains(currentTermList[randomIndex].term)) {
         options.add(currentTermList[randomIndex].term);
       } else {
         index--;
       }
     }
-
-    if (terms) {
+    //checks if the useanswers is true and fills the options list with the
+    //answer field of a term, same as before checks that the options are not duped
+    if (useAnswers) {
       if (!options.contains(currentTermList[randomIndex].answer)) {
         options.add(currentTermList[randomIndex].answer);
       } else {
         index--;
       }
     }
-
-    // if (controller.mixTermsAnswers) {
-    //   int i = Random().nextInt(1);
-    //   if (i % 2 == 0) {
-    //     options.add(currentTermList[randomIndex].term);
-    //   } else {
-    //     options.add(currentTermList[randomIndex].answer);
-    //   }
-    // }
   }
 
+  //shuffles the list so the answer is not always the first one
   options.shuffle();
 
+  //returns the options list
   return options;
 }

@@ -5,6 +5,7 @@ import 'package:elephant/shared/shared.dart';
 import 'package:fluttertoast/fluttertoast.dart';
 import 'package:provider/provider.dart';
 
+//this page is in charge of letting the user choose different settings for the exam
 class ExamSettingsPage extends StatefulWidget {
   const ExamSettingsPage({Key? key}) : super(key: key);
 
@@ -13,12 +14,14 @@ class ExamSettingsPage extends StatefulWidget {
 }
 
 class _ExamSettingsPageState extends State<ExamSettingsPage> {
+  //texteditcontroll that handles the input of the user when choosing the examlength
   TextEditingController textEditingControllerExamLength =
       TextEditingController(text: 0.toString());
 
   @override
   Widget build(BuildContext context) {
     Controller controller = Provider.of<Controller>(context);
+    //text style for the title
     final textStyleTheme = Theme.of(context).textTheme.headline6;
 
     return Scaffold(
@@ -31,19 +34,24 @@ class _ExamSettingsPageState extends State<ExamSettingsPage> {
               crossAxisAlignment: CrossAxisAlignment.start,
               mainAxisSize: MainAxisSize.min,
               children: [
+                //Title of the page
                 Text(
                   'Select the exam configuration',
                   style: textStyleTheme,
                 ),
                 const SizedBox(height: 30),
+                //Displays a warning text if the selectedtags happens to be not empty or
+                //if the user is using the favorite terms option
                 controller.selectedTags.isNotEmpty ||
                         controller.useFavoriteTerms
                     ? const Text(
                         'Exam and flash cards will start with the currently applied filters, click the button to clear the tags and use all the terms')
                     : Container(),
+                //displays a button based on the conditions below
                 controller.selectedTags.isNotEmpty ||
                         controller.useFavoriteTerms
                     ? ElevatedButton(
+                        //clears tags and favorite status
                         onPressed: () {
                           controller.selectedTags.clear();
                           controller.useFavoriteTerms = false;
@@ -57,11 +65,7 @@ class _ExamSettingsPageState extends State<ExamSettingsPage> {
                   height: 25,
                 ),
                 const Text('Select the question and answer configuration'),
-                // Row(
-                //   crossAxisAlignment: CrossAxisAlignment.stretch,
-                //   mainAxisSize: MainAxisSize.min,
-                //   mainAxisAlignment: MainAxisAlignment.center,
-                //   children: [
+                //radios list tile of the different question and answer config
                 RadioListTile<ExamType>(
                   title: const Text('Use Terms'),
                   value: ExamType.useTerms,
@@ -94,12 +98,11 @@ class _ExamSettingsPageState extends State<ExamSettingsPage> {
                     });
                   },
                 ),
-                //   ],
-                // ),
 
                 const SizedBox(
                   height: 20,
                 ),
+                //row with a switch that lets the user choose if the want to use a fixed length for the exam
                 Row(
                   children: [
                     const Text('Use fixed length'),
@@ -112,29 +115,38 @@ class _ExamSettingsPageState extends State<ExamSettingsPage> {
                           controller.notifyNoob();
                         }),
                     Text(
-                        'Max length: ${controller.currentGlossaryDocuments.length}')
+                        'Max length: ${controller.listAssignerFunction().length}')
                   ],
                 ),
-
+                //textfield where the user can input the desired fixed length, which can never be more than the list
+                //length there for it was a logic for the value to always be an int and to never be more than the length
                 TextField(
                   keyboardType:
                       const TextInputType.numberWithOptions(decimal: false),
                   controller: textEditingControllerExamLength,
                   enabled: controller.useFixedLength,
                   onChanged: (value) {
-                    if (int.parse(value) >
-                        controller.currentGlossaryDocuments.length) {
+                    //it is always necessary to get the lermlist to check what is the max length an exam can have depending on the filters applied or if it is not filtered
+                    //trusting the list assigner function is the way
+                    List<TermModel> termsList =
+                        controller.listAssignerFunction();
+
+                    int intValue = int.tryParse(value.trim()) ?? 0;
+                    if (intValue > termsList.length) {
                       textEditingControllerExamLength.text =
-                          controller.currentGlossaryDocuments.length.toString();
+                          termsList.length.toString();
+                      return;
                     }
                   },
                 ),
-
+                //button bar with the different exam options, each button displays an error if clicked and the list of terms
+                //is empty
                 ButtonBar(
                   children: [
+                    //button for the open question exams
                     ElevatedButton(
                       onPressed: () {
-                        if (controller.currentGlossaryDocuments.isEmpty) {
+                        if (controller.currentGlossary.termsMapList.isEmpty) {
                           Fluttertoast.showToast(
                               msg:
                                   'There is not terms in the current glossary or with the applied filters');
@@ -146,11 +158,13 @@ class _ExamSettingsPageState extends State<ExamSettingsPage> {
                       },
                       child: const Text('Open Question Exam'),
                     ),
-                    controller.currentGlossaryDocuments.length < 4
+                    //if the current glossary terms list length is less than 4 it doesnt show the button
+                    controller.currentGlossary.termsMapList.length < 4
                         ? Container()
                         : ElevatedButton(
                             onPressed: () {
-                              if (controller.currentGlossaryDocuments.isEmpty) {
+                              if (controller
+                                  .currentGlossary.termsMapList.isEmpty) {
                                 Fluttertoast.showToast(
                                     msg:
                                         'There is not terms in the current glossary or with the applied filters');
@@ -161,14 +175,17 @@ class _ExamSettingsPageState extends State<ExamSettingsPage> {
                                 context,
                                 controller,
                                 examLength: int.parse(
-                                    textEditingControllerExamLength.text),
+                                    textEditingControllerExamLength.text.isEmpty
+                                        ? '0'
+                                        : textEditingControllerExamLength.text),
                               );
                             },
                             child: const Text('Multiple Option Exam'),
                           ),
+                    //flash cards btn
                     ElevatedButton(
                         onPressed: () {
-                          if (controller.currentGlossaryDocuments.isEmpty) {
+                          if (controller.currentGlossary.termsMapList.isEmpty) {
                             Fluttertoast.showToast(
                                 msg:
                                     'There is not terms in the current glossary or with the applied filters');
@@ -185,11 +202,12 @@ class _ExamSettingsPageState extends State<ExamSettingsPage> {
                 const SizedBox(
                   height: 15,
                 ),
+                //return button?
                 OutlinedButton(
                   onPressed: () {
                     Navigator.of(context).pop();
                   },
-                  child: const Text('Cancel'),
+                  child: const Text('Go back'),
                 ),
               ]),
         ),
@@ -197,13 +215,30 @@ class _ExamSettingsPageState extends State<ExamSettingsPage> {
     );
   }
 
+  //this function navigates to the exam page, it recieves the exam type and the controller, and the examLength
   navigateToExam(String type, BuildContext context, Controller controller,
-      {required int examLength}) {
-    Navigator.of(context).pop();
-    controller.resetControllerVars();
-    controller.generateCurrentTermsList(examLength: examLength);
+      {required int examLength}) async {
+    //before navigating makes a transation that updates the current glossary
+    //to let the other users know that someone is in the exam
+    await controller.currentGlossaryTransaction(() {
+      if (controller.currentGlossary.usersInExamList.contains('user')) {
+        return;
+      }
+      controller.currentGlossary.usersInExamList.add('user');
+    });
 
-    Navigator.of(context).pushNamed(ExamPage.routeName,
+    //resets some variables in the controller
+    controller.resetControllerVars();
+    //gets the exam length
+    controller.fixedExamLength = examLength;
+    //generates the currentTermList
+    controller.currentTermList = controller.listAssignerFunction().toList();
+    //shuffles currentTermList
+    controller.currentTermList.shuffle();
+
+    //Navigates to the exam page
+    Navigator.of(context).pushReplacementNamed(ExamPage.routeName,
+        //exam arguments
         arguments: ExamArguments(
           examType: type,
         ));

@@ -5,20 +5,22 @@ import 'package:provider/provider.dart';
 import 'package:elephant/themes/app_main_theme.dart';
 import 'package:elephant/shared/colors.dart';
 
+//this page is in charge of letting the user choose the desired team for the app
 class ThemeChooserPage extends StatelessWidget {
   const ThemeChooserPage({Key? key}) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
     Controller controller = Provider.of<Controller>(context);
-    // TODO: implement build
+    //doesn't let the scope to be poped if something is loading
     return WillPopScope(
       onWillPop: () async {
         return controller.isLoading ? false : true;
       },
       child: Scaffold(
         appBar: myAppBar(
-            context: context, type: 'theme_chooser', title: 'Theme Chooser'),
+            context: context, type: 'themeChooser', title: 'Theme Chooser'),
+        //displays the current avaliables themes for the app
         body: GridView(
           gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
               crossAxisCount: 2),
@@ -49,8 +51,11 @@ class ThemeChooserPage extends StatelessWidget {
   }
 }
 
+//card for in charge of displaying the theme info
 class CardThemeChooser extends StatelessWidget {
+  //recieves the themeName to later be used in a switch to assign the right colors to the theme
   final String themeName;
+  //recieves the color to be used as a secondary color
   final Color color;
 
   const CardThemeChooser(
@@ -66,6 +71,7 @@ class CardThemeChooser extends StatelessWidget {
   Widget build(BuildContext context) {
     ColorScheme light;
     ColorScheme dark;
+    //this switch is in charge of giving the right colors to the theme depending on the theme name
     switch (themeName) {
       case 'Yellowphant':
         light = GalleryThemeData.lightColorSchemeYellow;
@@ -88,6 +94,7 @@ class CardThemeChooser extends StatelessWidget {
         dark = GalleryThemeData.darkColorSchemeGudGreen;
         break;
     }
+    //gesture detector so the card can be clicked and the theme selected
     return GestureDetector(
       onTap: () async {
         if (!controller.isLoading) {
@@ -100,6 +107,9 @@ class CardThemeChooser extends StatelessWidget {
       child: Card(
         child: Column(
           children: [
+            const SizedBox(
+              height: 15,
+            ),
             Text(themeName),
             const SizedBox(
               height: 15,

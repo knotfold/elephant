@@ -1,12 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:elephant/shared/shared.dart';
 
+//widget in charge of displaying a bunch of settings to the user
 class SettingsPage extends StatelessWidget {
   const SettingsPage({Key? key}) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
-    // TODO: implement build
     return Scaffold(
       appBar: myAppBar(context: context, type: 'settings', title: 'Settings'),
       body: ListView(

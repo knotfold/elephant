@@ -1,16 +1,14 @@
 import 'package:elephant/shared/colors.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:flutter/services.dart';
 
+//this is the theme of the app and im not gonna comment this for now
 class GalleryThemeData {
   static const lightFillColor = Colors.black;
   static const darkFillColor = Colors.white;
 
   static final Color lightFocusColor = Colors.black.withOpacity(0.12);
   static final Color darkFocusColor = Colors.white.withOpacity(0.12);
-
-  static const int _defaultColor = 0xcafefeed;
 
   static ThemeData lightThemeData =
       themeData(lightColorSchemeGudGreen, lightFocusColor);
