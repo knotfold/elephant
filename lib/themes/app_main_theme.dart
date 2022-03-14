@@ -245,6 +245,7 @@ class GalleryThemeData {
       fontWeight: _bold,
       fontSize: 20.0,
     ),
+    headline3: GoogleFonts.montserrat(fontWeight: _regular, fontSize: 24.0),
     caption: GoogleFonts.oswald(fontWeight: _semiBold, fontSize: 16.0),
     headline5: GoogleFonts.oswald(fontWeight: _medium, fontSize: 17.0),
     subtitle1: GoogleFonts.montserrat(fontWeight: _medium, fontSize: 16.0),

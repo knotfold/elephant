@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:elephant/shared/widgets.dart';
 import 'package:flutter/material.dart';
@@ -5,41 +7,49 @@ import 'package:elephant/services/services.dart';
 import 'package:provider/provider.dart';
 
 //widget in charge of testing stuff, should not be avaliable on the publish version
-class WidgetTester extends StatelessWidget {
+class WidgetTester extends StatefulWidget {
   const WidgetTester({Key? key}) : super(key: key);
+
+  @override
+  State<WidgetTester> createState() => _WidgetTesterState();
+}
+
+class _WidgetTesterState extends State<WidgetTester> {
+  late StreamSubscription _connectionChangeStream;
 
   @override
   Widget build(BuildContext context) {
     Controller controller = Provider.of<Controller>(context);
     return Scaffold(
       appBar: AppBar(),
-      body: FutureBuilder(
-        future: changeTermsDocsToList(controller),
-        builder: (context, asyncSnapshot) {
-          if (!asyncSnapshot.hasData) {
-            return SingleChildScrollView(
-              child: Padding(
-                padding: const EdgeInsets.all(20),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.center,
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  mainAxisSize: MainAxisSize.max,
-                  children: const [
-                    Text('Loading results'),
-                    CircularProgressIndicator(),
-                  ],
-                ),
-              ),
-            );
-          }
+      body: Container(),
+      // body: FutureBuilder(
+      //   future: changeTermsDocsToList(controller),
+      //   builder: (context, asyncSnapshot) {
+      //     if (!asyncSnapshot.hasData) {
+      //       return SingleChildScrollView(
+      //         child: Padding(
+      //           padding: const EdgeInsets.all(20),
+      //           child: Column(
+      //             crossAxisAlignment: CrossAxisAlignment.center,
+      //             mainAxisAlignment: MainAxisAlignment.center,
+      //             mainAxisSize: MainAxisSize.max,
+      //             children: const [
+      //               Text('Loading results'),
+      //               CircularProgressIndicator(),
+      //             ],
+      //           ),
+      //         ),
+      //       );
+      //     }
 
-          if (asyncSnapshot.data == false) {
-            return const ErrorConnection();
-          }
+      //     if (asyncSnapshot.data == false) {
+      //       return const ErrorConnection();
+      //     }
 
-          return Container();
-        },
-      ),
+      //     return Container();
+      //   },
+      // ),
     );
   }
 }

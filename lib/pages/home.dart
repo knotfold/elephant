@@ -1,4 +1,9 @@
+import 'dart:async';
+import 'dart:ui';
+
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:connectivity_plus/connectivity_plus.dart';
+import 'package:elephant/pages/pages.dart';
 import 'package:elephant/shared/widgets.dart';
 import 'package:flutter/material.dart';
 import 'package:elephant/shared/shared.dart';
@@ -15,23 +20,43 @@ class Home extends StatefulWidget {
 
 //the home page is in charge of displaying all the glossaries ina grid view
 class _HomeState extends State<Home> {
+  final Stream<QuerySnapshot> _glossaryStream =
+      FirebaseFirestore.instance.collection('glossaries').snapshots();
+
   @override
   Widget build(BuildContext context) {
+    Controller controller = Provider.of<Controller>(context);
     //stream of all the glossaries
-    final Stream<QuerySnapshot> _glossaryStream =
-        FirebaseFirestore.instance.collection('glossaries').snapshots();
 
-    return Scaffold(
-      //floating action button that shows a dialog to add a new glossary
-      floatingActionButton: FloatingActionButton(
-        onPressed: () {
-          dialogNewGlossary(context);
-        },
-        child: const Icon(Icons.add),
-      ),
-      appBar: myAppBar(context: context, type: 'home'),
-      body: HomeBodyWidget(glossaryStream: _glossaryStream),
-    );
+    return StreamBuilder(
+        stream: Connectivity().onConnectivityChanged,
+        builder: (context, AsyncSnapshot<ConnectivityResult> snapshot) {
+          print(snapshot.data);
+          if (snapshot.data != ConnectivityResult.wifi &&
+              snapshot.data != ConnectivityResult.mobile) {
+            if (!controller.firstConnectionTick) {
+              controller.firstConnectionTick = true;
+            } else {
+              controller.internetConnection = false;
+
+              // Navigator.of(context).popUntil(ModalRoute.withName('/'));
+            }
+          } else {
+            controller.internetConnection = true;
+          }
+
+          return Scaffold(
+            //floating action button that shows a dialog to add a new glossary
+            floatingActionButton: FloatingActionButton(
+              onPressed: () {
+                dialogNewGlossary(context);
+              },
+              child: const Icon(Icons.add),
+            ),
+            appBar: myAppBar(context: context, type: 'home'),
+            body: HomeBodyWidget(glossaryStream: _glossaryStream),
+          );
+        });
   }
 
   Future<dynamic> dialogNewGlossary(BuildContext context) {
@@ -56,6 +81,7 @@ class HomeBodyWidget extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    Controller controller = Provider.of(context);
     return Container(
       padding: const EdgeInsets.all(5),
       //streambuilder that monitors all the glossaries
@@ -63,7 +89,9 @@ class HomeBodyWidget extends StatelessWidget {
         stream: _glossaryStream,
         builder: (context, snapshot) {
           //if the snapshot has an error it displays an error widget
+
           if (snapshot.hasError) {
+            print(snapshot.error);
             return const ErrorConnection();
           }
 
@@ -233,7 +261,7 @@ class _DialogAddNewGlossaryState extends State<DialogAddNewGlossary> {
                                         Navigator.of(context).pop();
                                         Fluttertoast.showToast(
                                             msg:
-                                                'Error adding the glossary, check your connection',
+                                                'Error adding the glossary, check your internet connection',
                                             toastLength: Toast.LENGTH_LONG);
                                       },
                                     );

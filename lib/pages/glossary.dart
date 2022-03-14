@@ -208,6 +208,13 @@ class ListViewTermsSB extends StatelessWidget {
 
           controller.mapListToTermsList();
 
+          //TODO: test this
+          if (controller.currentGlossary.usersInExamList.contains('user')) {
+            controller.currentGlossaryTransaction(() {
+              controller.currentGlossary.usersInExamList.remove('user');
+            });
+          }
+
           return ListViewBuilderTerms(
             controller: controller,
           );
@@ -377,39 +384,50 @@ class ListViewBuilderTerms extends StatelessWidget {
                           builder: (context) {
                             return controller
                                     .currentGlossary.usersInExamList.isEmpty
-                                ? AlertDialog(
-                                    title: const Text(
-                                        'Are you sure you want to delete this term?'),
-                                    actions: [
-                                      ElevatedButton(
-                                          onPressed: () {
-                                            Navigator.of(context).pop();
-                                          },
-                                          child: const Text('Cancel')),
-                                      ElevatedButton(
-                                          onPressed: () async {
-                                            controller.isLoading = true;
-                                            controller
-                                                .currentGlossary.termsMapList
-                                                .removeAt(term.listIndex);
-                                            await controller.currentGlossary
-                                                .documentReference
-                                                .update(controller
-                                                    .currentGlossary
-                                                    .toMap())
-                                                .catchError((onError) =>
-                                                    Fluttertoast.showToast(
-                                                        msg:
-                                                            'Error, could not delete the term'))
-                                                .then((value) =>
-                                                    Fluttertoast.showToast(
-                                                        msg:
-                                                            'Term deleted succesfully'));
-                                            Navigator.of(context).pop();
-                                            controller.isLoading = false;
-                                          },
-                                          child: const Text('Delete'))
-                                    ],
+                                ? WillPopScope(
+                                    onWillPop: () async {
+                                      return !controller.isLoading;
+                                    },
+                                    child: AlertDialog(
+                                      title: const Text(
+                                          'Are you sure you want to delete this term?'),
+                                      actions: controller.isLoading
+                                          ? [const CircularProgressIndicator()]
+                                          : [
+                                              ElevatedButton(
+                                                  onPressed: () {
+                                                    Navigator.of(context).pop();
+                                                  },
+                                                  child: const Text('Cancel')),
+                                              ElevatedButton(
+                                                  onPressed: () async {
+                                                    controller.isLoading = true;
+                                                    controller.notifyNoob();
+                                                    controller.currentGlossary
+                                                        .termsMapList
+                                                        .removeAt(
+                                                            term.listIndex);
+                                                    await controller
+                                                        .currentGlossary
+                                                        .documentReference
+                                                        .update(controller
+                                                            .currentGlossary
+                                                            .toMap())
+                                                        .catchError((onError) =>
+                                                            Fluttertoast.showToast(
+                                                                msg:
+                                                                    'Error, could not delete the term'))
+                                                        .then((value) =>
+                                                            Fluttertoast.showToast(
+                                                                msg:
+                                                                    'Term deleted succesfully'));
+                                                    Navigator.of(context).pop();
+                                                    controller.isLoading =
+                                                        false;
+                                                  },
+                                                  child: const Text('Delete'))
+                                            ],
+                                    ),
                                   )
                                 : const SimpleDialog(
                                     contentPadding: EdgeInsets.all(15),
@@ -650,9 +668,19 @@ class _DialogAddNewTermState extends State<DialogAddNewTerm> {
                                   widget.term.answer = value;
                                 },
                                 controller: textEditingControllerAnswer,
-                                decoration: const InputDecoration(
+                                decoration: InputDecoration(
+                                  suffixIcon: IconButton(
+                                      onPressed: () async {
+                                        ClipboardData? data =
+                                            await Clipboard.getData(
+                                                'text/plain');
+                                        setState(() {
+                                          widget.term.answer = data?.text ?? '';
+                                        });
+                                      },
+                                      icon: const Icon(Icons.paste)),
                                   labelText: 'Answer',
-                                  border: OutlineInputBorder(
+                                  border: const OutlineInputBorder(
                                     borderRadius: BorderRadius.all(
                                       Radius.circular(10),
                                     ),

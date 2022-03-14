@@ -18,6 +18,7 @@ class _StartPageState extends State<StartPage> {
   Widget build(BuildContext context) {
     Controller controller = Provider.of<Controller>(context);
     final textTheme = Theme.of(context).textTheme.headline2;
+    print('we got to the starter page :)');
     return Scaffold(
       body: SizedBox(
         //makes the width of the page the width of the screen
@@ -66,7 +67,7 @@ class _StartPageState extends State<StartPage> {
       //this just detects if this action has been execuded previously
       if (!controller.navigateToHomeExecuted) {
         controller.navigateToHomeExecuted = true;
-        Navigator.of(context).pushReplacementNamed('/');
+        Navigator.of(context).pop();
       }
       // controller.notifyNoob();
     });

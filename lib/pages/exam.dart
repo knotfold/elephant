@@ -518,7 +518,8 @@ class _ExamCardMultipleOptionState extends State<ExamCardMultipleOption> {
           }
           break;
       }
-      options = multipleOptionMaker(controller, answer!, useTerms);
+      options = multipleOptionMaker(
+          controller, answer!, useTerms, widget.term.typeEnum);
     }
 
     //when the widget launches sets the controller updatestar variable to false, this is to
@@ -681,12 +682,15 @@ String textToDisplay(TermModel term, bool useTerms) {
 //makes multiple options for the exam, the answer is the answer for the questions and the terms
 //bool lets the code know if the list needs to be made with terms of with answers
 List<String> multipleOptionMaker(
-    Controller controller, String answer, bool useAnswers) {
+    Controller controller, String answer, bool useAnswers, Type termType) {
   //generates a empty list to be filled with the different options
   List<String> options = [];
 
   //list created to have cleaner code
-  List<TermModel> currentTermList = controller.unfilteredTermList;
+  List<TermModel> currentTermList =
+      controller.termTypeListCreator(termType).length >= 4
+          ? controller.termTypeListCreator(termType)
+          : controller.unfilteredTermList;
 
   //the answer is added automatically to the list
   options.add(answer);

@@ -102,6 +102,18 @@ AppBar myAppBar(
             showDialog(context: context, builder: (context) => toShowDialog);
           },
           icon: const Icon(Icons.help_outline_rounded)),
+      SizedBox(
+        width: 10,
+      ),
+      controller.internetConnection
+          ? Container()
+          : Icon(
+              Icons.wifi_off,
+              color: Colors.red,
+            ),
+      SizedBox(
+        width: 10,
+      ),
     ],
   );
 }
@@ -116,6 +128,7 @@ navigateToDifficultExam(
   controller.resetControllerVars();
 
   controller.generateDifficultTermList();
+  Navigator.of(context).pop();
   Navigator.of(context).pop();
   Navigator.of(context).pushNamed(ExamPage.routeName,
       arguments: ExamArguments(
@@ -170,7 +183,7 @@ class ListTileTerm extends StatelessWidget {
       leading: Text(
         controller.orderAlphabetically
             ? term.term.characters.first
-            : term.listIndex.toString(),
+            : (term.listIndex + 1).toString(),
       ),
       title: Text(term.term),
       subtitle: Text(term.answer),
@@ -250,6 +263,8 @@ class GlossaryCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     Controller controller = Provider.of(context);
+    ColorScheme colorScheme = Theme.of(context).colorScheme;
+
     return GestureDetector(
       onTap: () {
         controller.useFavoriteTerms = false;
@@ -258,7 +273,8 @@ class GlossaryCard extends StatelessWidget {
         Navigator.of(context).pushNamed('/glossaryPage');
       },
       child: Card(
-        elevation: 5,
+        color: colorScheme.background,
+        elevation: 0,
         child: Padding(
           padding: const EdgeInsets.all(8.0),
           child: Column(
@@ -275,6 +291,8 @@ class GlossaryCard extends StatelessWidget {
               ),
               Flexible(
                 child: Container(
+                  height: 50,
+                  width: 150,
                   padding: const EdgeInsets.all(5),
                   decoration: BoxDecoration(
                     color: Theme.of(context).colorScheme.secondary,

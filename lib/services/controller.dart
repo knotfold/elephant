@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:elephant/services/services.dart';
 import 'package:elephant/shared/colors.dart';
@@ -37,6 +39,12 @@ class Controller with ChangeNotifier {
 
   //eh? not used anymore lol
   int currentCardIndex = 1;
+  //ints for counting how many of a certain type are there
+  int totalAdjectives = 0;
+  int totalNouns = 0;
+  int totalVerbs = 0;
+  int totalAdverbs = 0;
+  int totalPhrases = 0;
 
   //exam preparation variables
   //fixed examlength is used for handling the value recieved during the exam settings page config
@@ -80,6 +88,12 @@ class Controller with ChangeNotifier {
   bool userDataInitialized = false;
   //checks if the navigation to home has already been executed so it is not executed again
   bool navigateToHomeExecuted = false;
+
+  //this bool is used to check if the first connection tick has ocurred or not
+  bool firstConnectionTick = false;
+
+  //this bool is for the status connection of the app, checks if there is a wifi connection or not
+  bool internetConnection = true;
 
   //fundamental to know the examtype for the multiple option exam
   ExamType examType = ExamType.useTerms;
@@ -206,15 +220,44 @@ class Controller with ChangeNotifier {
   }
 
   //
+  //connectivity checking code
+  //
+  //
+  //
+
+  //
   //
   //this functions is very important and good cause it is in charge of making the terms from the maps obtained from the database
 
   mapListToTermsList() {
     unfilteredTermList.clear();
     int i = 0;
+    totalAdjectives = 0;
+    totalAdverbs = 0;
+    totalNouns = 0;
+    totalVerbs = 0;
+    totalPhrases = 0;
     for (var map in currentGlossary.termsMapList) {
-      unfilteredTermList.add(TermModel.fromMap(map, i));
+      TermModel toAddTerm = TermModel.fromMap(map, i);
+      unfilteredTermList.add(toAddTerm);
       i++;
+      switch (toAddTerm.typeEnum) {
+        case Type.verb:
+          totalVerbs++;
+          break;
+        case Type.adverd:
+          totalAdverbs++;
+          break;
+        case Type.noun:
+          totalNouns++;
+          break;
+        case Type.phrase:
+          totalPhrases++;
+          break;
+        case Type.adjective:
+          totalAdjectives++;
+          break;
+      }
     }
   }
 
@@ -260,6 +303,21 @@ class Controller with ChangeNotifier {
     rightTerms.clear();
     currentTermList.clear();
     currentTermCount = 0;
+  }
+
+  Future<bool> hasNetwork() async {
+    bool connected = false;
+    try {
+      final result = await InternetAddress.lookup('example.com');
+      if (result.isNotEmpty && result[0].rawAddress.isNotEmpty) {
+        print('connected');
+        connected = true;
+      }
+    } on SocketException catch (_) {
+      print('not connected');
+      connected = false;
+    }
+    return connected;
   }
 
   //Creates a query to show for the glossary page, the main porpouse of this is to have a way to filter the terms on a glossary
@@ -323,6 +381,14 @@ class Controller with ChangeNotifier {
     await assignTheme();
     userDataInitialized = true;
     notifyListeners();
+  }
+
+  List<TermModel> termTypeListCreator(Type termType) {
+    List<TermModel> termTypeList = [];
+    termTypeList = unfilteredTermList
+        .where((element) => element.typeEnum == termType)
+        .toList();
+    return termTypeList;
   }
 
   //this function is in charge of running a transaction on the current glossary, and it also recieves a function it can perform some actions

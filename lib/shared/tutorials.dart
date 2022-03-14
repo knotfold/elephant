@@ -14,7 +14,10 @@ class TutorialHome extends StatelessWidget {
         const Text('In the home page you can explore'
             'the different glossaries that you have, and create new ones from 0. \n\n'
             'Click a glossary to navigate to its content. \n\n'
-            'Or click the + button found on the down right corner to create a new glossary'),
+            'Or click the + button found on the down right corner to create a new glossary. \n\n'
+            'Extra note, when the red wifi icon shows on the right top corner of your screen, it means that your'
+            'device does not have an internet connection, this is not good cause the app can have problems working'
+            'without internet, so make sure that you have an internet connection before using the app.'),
         const SizedBox(height: 15),
         const Icon(Icons.face_retouching_natural),
         const SizedBox(height: 15),

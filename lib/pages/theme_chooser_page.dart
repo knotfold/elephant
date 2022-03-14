@@ -69,6 +69,7 @@ class CardThemeChooser extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    ColorScheme colorScheme = Theme.of(context).colorScheme;
     ColorScheme light;
     ColorScheme dark;
     //this switch is in charge of giving the right colors to the theme depending on the theme name
@@ -105,12 +106,16 @@ class CardThemeChooser extends StatelessWidget {
         }
       },
       child: Card(
+        color: colorScheme.background,
         child: Column(
           children: [
             const SizedBox(
               height: 15,
             ),
-            Text(themeName),
+            Text(
+              themeName,
+              style: TextStyle(fontSize: 18),
+            ),
             const SizedBox(
               height: 15,
             ),

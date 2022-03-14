@@ -22,7 +22,8 @@ class _ExamSettingsPageState extends State<ExamSettingsPage> {
   Widget build(BuildContext context) {
     Controller controller = Provider.of<Controller>(context);
     //text style for the title
-    final textStyleTheme = Theme.of(context).textTheme.headline6;
+    final textStyleTheme = Theme.of(context).textTheme.headline3;
+    ColorScheme colorScheme = Theme.of(context).colorScheme;
 
     return Scaffold(
       appBar: myAppBar(
@@ -34,12 +35,16 @@ class _ExamSettingsPageState extends State<ExamSettingsPage> {
               crossAxisAlignment: CrossAxisAlignment.start,
               mainAxisSize: MainAxisSize.min,
               children: [
+                const SizedBox(
+                  height: 15,
+                ),
                 //Title of the page
                 Text(
-                  'Select the exam configuration',
-                  style: textStyleTheme,
+                  'Exam settings',
+                  style:
+                      textStyleTheme?.copyWith(color: colorScheme.onBackground),
                 ),
-                const SizedBox(height: 30),
+                const SizedBox(height: 10),
                 //Displays a warning text if the selectedtags happens to be not empty or
                 //if the user is using the favorite terms option
                 controller.selectedTags.isNotEmpty ||
@@ -62,7 +67,7 @@ class _ExamSettingsPageState extends State<ExamSettingsPage> {
                       )
                     : Container(),
                 const SizedBox(
-                  height: 25,
+                  height: 40,
                 ),
                 const Text('Select the question and answer configuration'),
                 //radios list tile of the different question and answer config
@@ -100,12 +105,12 @@ class _ExamSettingsPageState extends State<ExamSettingsPage> {
                 ),
 
                 const SizedBox(
-                  height: 20,
+                  height: 40,
                 ),
+                const Text('Enable or disable exam custom length'),
                 //row with a switch that lets the user choose if the want to use a fixed length for the exam
                 Row(
                   children: [
-                    const Text('Use fixed length'),
                     Switch(
                         inactiveTrackColor: Colors.grey,
                         inactiveThumbColor: Colors.grey,
@@ -139,14 +144,19 @@ class _ExamSettingsPageState extends State<ExamSettingsPage> {
                     }
                   },
                 ),
+                const SizedBox(
+                  height: 40,
+                ),
+                const Text('Choose the type of exam'),
                 //button bar with the different exam options, each button displays an error if clicked and the list of terms
                 //is empty
                 ButtonBar(
+                  alignment: MainAxisAlignment.start,
                   children: [
                     //button for the open question exams
                     ElevatedButton(
                       onPressed: () {
-                        if (controller.currentGlossary.termsMapList.isEmpty) {
+                        if (controller.listAssignerFunction().isEmpty) {
                           Fluttertoast.showToast(
                               msg:
                                   'There is not terms in the current glossary or with the applied filters');
@@ -159,7 +169,7 @@ class _ExamSettingsPageState extends State<ExamSettingsPage> {
                       child: const Text('Open Question Exam'),
                     ),
                     //if the current glossary terms list length is less than 4 it doesnt show the button
-                    controller.currentGlossary.termsMapList.length < 4
+                    controller.listAssignerFunction().length < 4
                         ? Container()
                         : ElevatedButton(
                             onPressed: () {
@@ -185,7 +195,7 @@ class _ExamSettingsPageState extends State<ExamSettingsPage> {
                     //flash cards btn
                     ElevatedButton(
                         onPressed: () {
-                          if (controller.currentGlossary.termsMapList.isEmpty) {
+                          if (controller.listAssignerFunction().isEmpty) {
                             Fluttertoast.showToast(
                                 msg:
                                     'There is not terms in the current glossary or with the applied filters');

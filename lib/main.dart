@@ -1,3 +1,4 @@
+import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:elephant/pages/difficult_terms.dart';
 import 'package:elephant/pages/exam_results.dart';
 import 'package:elephant/pages/pages.dart';
@@ -11,6 +12,7 @@ import 'services/services.dart';
 //the main is where eeverything in the app starts
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+
   //this is important cause it initializes the firebase app, since it is the database it is crucial for this to be executed
   FirebaseApp app = await Firebase.initializeApp();
   runApp(
