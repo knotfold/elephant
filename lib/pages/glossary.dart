@@ -372,75 +372,85 @@ class ListViewBuilderTerms extends StatelessWidget {
                 if (index > termsList.length) return null;
                 return Slidable(
                   direction: Axis.horizontal,
-                  actionPane: const SlidableScrollActionPane(),
-                  actions: [
-                    IconSlideAction(
-                      color: Colors.red,
-                      caption: 'Delete',
-                      icon: Icons.delete_forever,
-                      onTap: () {
-                        showDialog(
-                          context: context,
-                          builder: (context) {
-                            return controller
-                                    .currentGlossary.usersInExamList.isEmpty
-                                ? WillPopScope(
-                                    onWillPop: () async {
-                                      return !controller.isLoading;
-                                    },
-                                    child: AlertDialog(
-                                      title: const Text(
-                                          'Are you sure you want to delete this term?'),
-                                      actions: controller.isLoading
-                                          ? [const CircularProgressIndicator()]
-                                          : [
-                                              ElevatedButton(
-                                                  onPressed: () {
-                                                    Navigator.of(context).pop();
-                                                  },
-                                                  child: const Text('Cancel')),
-                                              ElevatedButton(
-                                                  onPressed: () async {
-                                                    controller.isLoading = true;
-                                                    controller.notifyNoob();
-                                                    controller.currentGlossary
-                                                        .termsMapList
-                                                        .removeAt(
-                                                            term.listIndex);
-                                                    await controller
-                                                        .currentGlossary
-                                                        .documentReference
-                                                        .update(controller
-                                                            .currentGlossary
-                                                            .toMap())
-                                                        .catchError((onError) =>
-                                                            Fluttertoast.showToast(
-                                                                msg:
-                                                                    'Error, could not delete the term'))
-                                                        .then((value) =>
-                                                            Fluttertoast.showToast(
-                                                                msg:
-                                                                    'Term deleted succesfully'));
-                                                    Navigator.of(context).pop();
-                                                    controller.isLoading =
-                                                        false;
-                                                  },
-                                                  child: const Text('Delete'))
-                                            ],
-                                    ),
-                                  )
-                                : const SimpleDialog(
-                                    contentPadding: EdgeInsets.all(15),
-                                    children: [
-                                      Text(
-                                          'Someone is in exam, wait for his/her exam to finish in order to edit or add terms')
-                                    ],
-                                  );
-                          },
-                        );
-                      },
-                    ),
-                  ],
+                  endActionPane: ActionPane(
+                    motion: const ScrollMotion(),
+                    children: [
+                      SlidableAction(
+                        backgroundColor: Colors.red,
+                        label: 'Delete',
+                        icon: Icons.delete_forever,
+                        onPressed: (BuildContext context) {
+                          showDialog(
+                            context: context,
+                            builder: (context) {
+                              return controller
+                                      .currentGlossary.usersInExamList.isEmpty
+                                  ? WillPopScope(
+                                      onWillPop: () async {
+                                        return !controller.isLoading;
+                                      },
+                                      child: AlertDialog(
+                                        title: const Text(
+                                            'Are you sure you want to delete this term?'),
+                                        actions: controller.isLoading
+                                            ? [
+                                                const CircularProgressIndicator()
+                                              ]
+                                            : [
+                                                ElevatedButton(
+                                                    onPressed: () {
+                                                      Navigator.of(context)
+                                                          .pop();
+                                                    },
+                                                    child:
+                                                        const Text('Cancel')),
+                                                ElevatedButton(
+                                                    onPressed: () async {
+                                                      controller.isLoading =
+                                                          true;
+                                                      controller.notifyNoob();
+                                                      controller.currentGlossary
+                                                          .termsMapList
+                                                          .removeAt(
+                                                              term.listIndex);
+                                                      await controller
+                                                          .currentGlossary
+                                                          .documentReference
+                                                          .update(controller
+                                                              .currentGlossary
+                                                              .toMap())
+                                                          .catchError((onError) =>
+                                                              Fluttertoast
+                                                                  .showToast(
+                                                                      msg:
+                                                                          'Error, could not delete the term'))
+                                                          .then((value) =>
+                                                              Fluttertoast
+                                                                  .showToast(
+                                                                      msg:
+                                                                          'Term deleted succesfully'));
+                                                      Navigator.of(context)
+                                                          .pop();
+                                                      controller.isLoading =
+                                                          false;
+                                                    },
+                                                    child: const Text('Delete'))
+                                              ],
+                                      ),
+                                    )
+                                  : const SimpleDialog(
+                                      contentPadding: EdgeInsets.all(15),
+                                      children: [
+                                        Text(
+                                            'Someone is in exam, wait for his/her exam to finish in order to edit or add terms')
+                                      ],
+                                    );
+                            },
+                          );
+                        },
+                      ),
+                    ],
+                  ),
                   child: ListTileTerm(term: term, controller: controller),
                 );
               },

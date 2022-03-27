@@ -1,12 +1,28 @@
+import 'dart:ffi';
+
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 
 //enum of the types that a term can have, this help us to classify them
 enum Type { verb, adverd, noun, phrase, adjective }
 
 //model for the user of the app, this still needs more work
-class User {
+class UserModel {
   late String username;
-  late dynamic creationDate;
+  late String email;
+
+  late String uid;
+  late UserCredential userCredential;
+
+  UserModel({required this.username});
+
+  UserModel.newUserLogin(User user, DocumentSnapshot documentSnapshot) {
+    Map<String, dynamic> data =
+        documentSnapshot.data()! as Map<String, dynamic>;
+    username = data['username'] ?? '';
+    email = user.email ?? '';
+    uid = user.uid;
+  }
 }
 
 //glossary model is for the models of the glossaries lol
@@ -127,11 +143,4 @@ class TermModel {
       'usersListDifficultTerms': usersListDifficultTerms
     };
   }
-}
-
-//lol? lmao
-class UserModel {
-  late String username;
-
-  UserModel({required this.username});
 }

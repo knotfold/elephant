@@ -9,3 +9,5 @@ export 'start_page.dart';
 export 'widget_tester_page.dart';
 export 'exam_settings_page.dart';
 export 'no_connectivity_app.dart';
+export 'login_page.dart';
+export 'register_page.dart';

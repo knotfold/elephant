@@ -67,7 +67,7 @@ class _StartPageState extends State<StartPage> {
       //this just detects if this action has been execuded previously
       if (!controller.navigateToHomeExecuted) {
         controller.navigateToHomeExecuted = true;
-        Navigator.of(context).pop();
+        Navigator.of(context).pushReplacementNamed('/loginPage');
       }
       // controller.notifyNoob();
     });

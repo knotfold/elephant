@@ -3,6 +3,7 @@ import 'dart:io';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:elephant/services/services.dart';
 import 'package:elephant/shared/colors.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 
 import 'package:fluttertoast/fluttertoast.dart';
@@ -15,6 +16,7 @@ enum ExamType { useTerms, useAnswers, mixed }
 class Controller with ChangeNotifier {
   //user model?
   UserModel user = UserModel(username: 'Kno');
+  late UserModel activeUser;
   //current glossary is used to handle the glossary that is currently being displayed in the
   //glossary page and it helps a lot to eddit, add or delete stuff from it
   late GlossaryModel _currentGlossary;
@@ -130,6 +132,24 @@ class Controller with ChangeNotifier {
   );
 
   //functions
+
+  //function that checks if the uid is registerted in the db
+  Future<bool> login(User user, BuildContext context) async {
+    var userDocs = await FirebaseFirestore.instance
+        .collection('users')
+        .where('uid', isEqualTo: user.uid)
+        .get();
+    if (userDocs.docs.isEmpty) {
+      print('new user needs to be registered');
+      Navigator.of(context).pushNamed('/registerPage');
+    } else {
+      activeUser = UserModel.newUserLogin(user, userDocs.docs.first);
+      print('logging in');
+      Navigator.of(context).pop();
+    }
+    return true;
+  }
+
   //function that checks if the ag is inside the select tags already to display its value
   bool checkTagSelected(String tag) {
     bool selected;
