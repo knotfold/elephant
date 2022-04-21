@@ -148,6 +148,7 @@ class _GlossaryPageState extends State<GlossaryPage> {
 
   BottomBarTheme bottomBarTheme(BuildContext context) {
     return BottomBarTheme(
+      heightOpened: 600,
       itemIconColor: Theme.of(context).colorScheme.onBackground,
       selectedItemIconColor: Theme.of(context).colorScheme.onBackground,
       mainButtonPosition: MainButtonPosition.right,
@@ -239,21 +240,20 @@ class BottomNavBarSheetBody extends StatelessWidget {
   Widget build(BuildContext context) {
     return SingleChildScrollView(
       child: Column(
+        mainAxisSize: MainAxisSize.max,
         children: [
           const SizedBox(
-            height: 15,
+            height: 10,
           ),
-          const Icon(Icons.menu_book_rounded),
-          const SizedBox(
-            height: 15,
+          GlossaryInfo(
+            glossaryModel: controller.currentGlossary,
           ),
-          Text(controller.currentGlossary.name + ' Glossary'),
-          Text('Creation date: ' +
-              controller.currentGlossary.creationDate.toDate().toString()),
           const SizedBox(
             height: 25,
           ),
-          const Icon(Icons.delete_forever),
+          const Divider(
+            thickness: 1,
+          ),
           const SizedBox(
             height: 15,
           ),
@@ -335,6 +335,9 @@ class BottomNavBarSheetBody extends StatelessWidget {
   }
 }
 
+// ignore: must_be_immutable
+
+// ignore: must_be_immutable
 //this is the list that displays the terms of the glossary
 class ListViewBuilderTerms extends StatelessWidget {
   const ListViewBuilderTerms({
@@ -555,6 +558,7 @@ class _DialogAddNewTermState extends State<DialogAddNewTerm> {
   late String dropdownValue = widget.term.type;
   //recieves the value tag of the current term,  and then is used in the dropdown of tags
   late String dropdownValueTags = widget.term.tag;
+
   //text editing controller for the text field
   TextEditingController textEditingControllerTerm = TextEditingController();
   //text editing controller of the answer field
@@ -634,6 +638,7 @@ class _DialogAddNewTermState extends State<DialogAddNewTerm> {
                                   //this is here so the value doesnt reset on context refresh
                                   termName = value;
                                 },
+                                enabled: !isLoading,
                                 controller: textEditingControllerTerm,
                                 //a button that adds the current value of the text edtitng controller to the clipboard
                                 decoration: InputDecoration(
@@ -661,6 +666,7 @@ class _DialogAddNewTermState extends State<DialogAddNewTerm> {
                                   if (value!.trim() == '') {
                                     return 'Please give a name to the term';
                                   }
+                                  return null;
                                 },
                                 //on saved saves its value to the termName variable
                                 onSaved: (value) {
@@ -677,6 +683,7 @@ class _DialogAddNewTermState extends State<DialogAddNewTerm> {
                                 onChanged: (value) {
                                   widget.term.answer = value;
                                 },
+                                enabled: !isLoading,
                                 controller: textEditingControllerAnswer,
                                 decoration: InputDecoration(
                                   suffixIcon: IconButton(
@@ -701,6 +708,7 @@ class _DialogAddNewTermState extends State<DialogAddNewTerm> {
                                   if (value!.trim() == '') {
                                     return 'Please give a meaning or translation';
                                   }
+                                  return null;
                                 },
                                 onSaved: (value) {
                                   termAnswer = value!;
@@ -897,6 +905,8 @@ class _DialogAddNewTermState extends State<DialogAddNewTerm> {
           return;
         }
         transaction.update(glossaryDocRef, controller.currentGlossary.toMap());
+        controller.mapListToTermsList();
+        controller.notifyNoob();
         //erros displayeed when something bad occurs
       } else {
         hasError = true;
@@ -938,6 +948,9 @@ class _DialogAddNewTermState extends State<DialogAddNewTerm> {
         ),
         onChanged: (dynamic newValue) {
           setState(() {
+            if (isLoading) {
+              return;
+            }
             dropdownValueTags = newValue!.toString();
           });
         },
@@ -968,11 +981,14 @@ class _DialogAddNewTermState extends State<DialogAddNewTerm> {
           color: primary,
         ),
         onChanged: (String? newValue) {
+          if (isLoading) {
+            return;
+          }
           setState(() {
             dropdownValue = newValue!;
           });
         },
-        items: enumToList().map<DropdownMenuItem<String>>((String value) {
+        items: enumTypeToList().map<DropdownMenuItem<String>>((String value) {
           return DropdownMenuItem<String>(
             value: value,
             child: Text(value),
@@ -990,7 +1006,7 @@ class _DialogAddNewTermState extends State<DialogAddNewTerm> {
   }
 
   //sets the type enum to a list so it can be used in the dropdown button
-  List<String> enumToList() {
+  List<String> enumTypeToList() {
     List<String> list = [];
     Type.values.toList().forEach((element) {
       list.add(element.toString());

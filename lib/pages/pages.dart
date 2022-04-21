@@ -11,3 +11,4 @@ export 'exam_settings_page.dart';
 export 'no_connectivity_app.dart';
 export 'login_page.dart';
 export 'register_page.dart';
+export 'library_search_delegate.dart';

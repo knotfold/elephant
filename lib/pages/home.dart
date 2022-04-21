@@ -3,6 +3,7 @@ import 'dart:ui';
 
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:connectivity_plus/connectivity_plus.dart';
+import 'package:elephant/pages/library_search_delegate.dart';
 import 'package:elephant/pages/pages.dart';
 import 'package:elephant/shared/widgets.dart';
 import 'package:flutter/material.dart';
@@ -20,12 +21,14 @@ class Home extends StatefulWidget {
 
 //the home page is in charge of displaying all the glossaries ina grid view
 class _HomeState extends State<Home> {
-  final Stream<QuerySnapshot> _glossaryStream =
-      FirebaseFirestore.instance.collection('glossaries').snapshots();
-
   @override
   Widget build(BuildContext context) {
     Controller controller = Provider.of<Controller>(context);
+    final Stream<QuerySnapshot> _glossaryStream = FirebaseFirestore.instance
+        .collection('glossaries')
+        .where('glossaryUsers', arrayContains: controller.activeUser.username)
+        .orderBy('lastChecked', descending: true)
+        .snapshots();
     //stream of all the glossaries
 
     return StreamBuilder(
@@ -134,12 +137,14 @@ class HomeBodyWidget extends StatelessWidget {
           return GridView.builder(
               itemCount: queryDocuments.length,
               gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                  crossAxisCount: 3),
+                  mainAxisExtent: 160, crossAxisCount: 3),
               itemBuilder: (context, index) {
                 return GlossaryCard(
-                    glossary: GlossaryModel.fromDocumentSnapshot(
-                  queryDocuments[index],
-                ));
+                  glossary: GlossaryModel.fromDocumentSnapshot(
+                    queryDocuments[index],
+                  ),
+                  route: '/glossaryPage',
+                );
               });
         },
       ),
@@ -181,101 +186,142 @@ class _DialogAddNewGlossaryState extends State<DialogAddNewGlossary> {
         child: Container(
           padding: const EdgeInsets.all(10),
           child: Form(
-              key: formKey,
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Container(
-                    padding: const EdgeInsets.all(10),
-                    child: Text(
-                      'Add a new glossary',
-                      style: textThemeTitle,
-                    ),
+            key: formKey,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(10),
+                  child: Text(
+                    'Add a new glossary',
+                    style: textThemeTitle,
                   ),
-                  const SizedBox(
-                    height: 10,
-                  ),
-                  TextFormField(
-                    maxLength: 30,
-                    decoration: const InputDecoration(
-                      labelText: 'Glossary name',
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.all(
-                          Radius.circular(10),
-                        ),
+                ),
+                const SizedBox(
+                  height: 10,
+                ),
+                TextFormField(
+                  maxLength: 30,
+                  decoration: const InputDecoration(
+                    labelText: 'Glossary name',
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.all(
+                        Radius.circular(10),
                       ),
                     ),
-                    validator: (value) {
-                      //validates that the inputfield is not empty
-                      if (value!.trim() == '') {
-                        return 'Please give a name to the glossary';
-                      }
-                    },
-                    onSaved: (value) {
-                      newGlossaryName = value!;
-                    },
                   ),
-                  //if it is loading it hides the buttons with a progress indicator to avoid more usir inputs
-                  isLoading
-                      ? const CircularProgressIndicator()
-                      : ButtonBar(
-                          children: [
-                            OutlinedButton(
-                              onPressed: () {
-                                Navigator.of(context).pop();
-                              },
-                              child: const Text('Cancel'),
-                            ),
-                            ElevatedButton(
-                              onPressed: () async {
-                                if (!formKey.currentState!.validate()) {
-                                  return;
-                                }
-                                formKey.currentState!.save();
-                                setState(() {
-                                  isLoading = true;
-                                });
-                                await glossaries
-                                    .add({
-                                      'name': newGlossaryName,
-                                      'user': controller.user.username,
-                                      'tags': ['untagged']
-                                    })
-                                    .catchError((onError) {
+                  validator: (value) {
+                    //validates that the inputfield is not empty
+                    if (value!.trim() == '') {
+                      return 'Please give a name to the glossary';
+                    }
+                  },
+                  onSaved: (value) {
+                    newGlossaryName = value!;
+                  },
+                ),
+                //if it is loading it hides the buttons with a progress indicator to avoid more usir inputs
+                isLoading
+                    ? const CircularProgressIndicator()
+                    : ButtonBar(
+                        children: [
+                          OutlinedButton(
+                            onPressed: () {
+                              Navigator.of(context).pop();
+                            },
+                            child: const Text('Cancel'),
+                          ),
+                          ElevatedButton(
+                            onPressed: () async {
+                              if (!formKey.currentState!.validate()) {
+                                return;
+                              }
+                              formKey.currentState!.save();
+                              setState(() {
+                                isLoading = true;
+                              });
+                              await glossaries
+                                  .add({
+                                    'name': newGlossaryName,
+                                    'nameSearch':
+                                        newGlossaryName.trim().toLowerCase(),
+                                    'tags': ['untagged'],
+                                    'mainCategory': 'MainCategory.other',
+                                    'userRatings': [],
+                                    'creationDate':
+                                        Timestamp.fromDate(DateTime.now()),
+                                    'creator': controller.activeUser.username,
+                                    'glossaryUsers': [
+                                      controller.activeUser.username
+                                    ],
+                                    'origin': 'Original'
+                                  })
+                                  .catchError((onError) {
+                                    isLoading = false;
+                                    setState(() {});
+                                    Navigator.of(context).pop();
+                                    Fluttertoast.showToast(
+                                        msg:
+                                            'Error adding the glossary, check your connection',
+                                        toastLength: Toast.LENGTH_LONG);
+                                  })
+                                  // ignore: avoid_print
+                                  .then((value) => print('User Added'))
+                                  .timeout(
+                                    const Duration(seconds: 30),
+                                    onTimeout: () {
                                       isLoading = false;
                                       setState(() {});
                                       Navigator.of(context).pop();
                                       Fluttertoast.showToast(
                                           msg:
-                                              'Error adding the glossary, check your connection',
+                                              'Error adding the glossary, check your internet connection',
                                           toastLength: Toast.LENGTH_LONG);
-                                    })
-                                    // ignore: avoid_print
-                                    .then((value) => print('User Added'))
-                                    .timeout(
-                                      const Duration(seconds: 30),
-                                      onTimeout: () {
-                                        isLoading = false;
-                                        setState(() {});
-                                        Navigator.of(context).pop();
-                                        Fluttertoast.showToast(
-                                            msg:
-                                                'Error adding the glossary, check your internet connection',
-                                            toastLength: Toast.LENGTH_LONG);
-                                      },
-                                    );
-                                setState(() {
-                                  isLoading = false;
-                                });
-                                Navigator.of(context).pop();
-                              },
-                              child: const Text('Add glossary'),
-                            ),
-                          ],
-                        )
-                ],
-              )),
+                                    },
+                                  );
+                              setState(() {
+                                isLoading = false;
+                              });
+                              Navigator.of(context).pop();
+                            },
+                            child: const Text('Add glossary'),
+                          ),
+                        ],
+                      ),
+                const Divider(),
+                Container(
+                  padding: const EdgeInsets.all(10),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: const [
+                      Text('Or go to the library'),
+                      SizedBox(
+                        width: 10,
+                      ),
+                      Icon(Icons.local_library),
+                    ],
+                  ),
+                ),
+                ElevatedButton(
+                  onPressed: () {
+                    Navigator.of(context).pop();
+                    Navigator.of(context).pushNamed('/libraryPage');
+                  },
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: const [
+                      Icon(Icons.ads_click),
+                      SizedBox(
+                        width: 10,
+                      ),
+                      Text('Click here to go :)'),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
         ),
       ),
     );

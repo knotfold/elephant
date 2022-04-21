@@ -67,7 +67,11 @@ class _StartPageState extends State<StartPage> {
       //this just detects if this action has been execuded previously
       if (!controller.navigateToHomeExecuted) {
         controller.navigateToHomeExecuted = true;
-        Navigator.of(context).pushReplacementNamed('/loginPage');
+        if (controller.activeSession) {
+          Navigator.of(context).pop();
+        } else {
+          Navigator.of(context).pushReplacementNamed('/loginPage');
+        }
       }
       // controller.notifyNoob();
     });
@@ -85,7 +89,7 @@ class _StartPageState extends State<StartPage> {
     if (controller.userDataInitialized) return true;
     bool idk = await timerTest;
     //this function is gonna be very important in the future
-    await controller.initilizedUserData();
+    await controller.initilizedUserData(context);
 
     return idk;
   }

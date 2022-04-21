@@ -45,6 +45,8 @@ class ExamResultPage extends StatelessWidget {
     //text style for the 4 score
     final textStylescore4Scale = Theme.of(context).textTheme.headline1;
 
+    ColorScheme colorScheme = Theme.of(context).colorScheme;
+
     return WillPopScope(
       //resets the controller variables
       onWillPop: () async {
@@ -101,8 +103,8 @@ class ExamResultPage extends StatelessWidget {
                       ),
                       //circle avatar to display the 4 score in a cool way.
                       CircleAvatar(
-                        foregroundColor: secondaryColor,
-                        backgroundColor: secondaryColor,
+                        foregroundColor: colorScheme.secondary,
+                        backgroundColor: colorScheme.secondary,
                         maxRadius: 80,
                         child: Text(
                           assing4Score(totalPercentage),
@@ -316,13 +318,13 @@ class ExamResultPage extends StatelessWidget {
       phrase = 'Well done :)';
     }
     if (totalPercentage > 92) {
-      phrase = 'Amazing';
+      phrase = 'Congratulations';
     }
     if (totalPercentage > 96) {
-      phrase = 'The best';
+      phrase = 'Amazing';
     }
     if (totalPercentage >= 100) {
-      phrase = 'Perfect';
+      phrase = 'Perfection';
     }
     return phrase;
   }

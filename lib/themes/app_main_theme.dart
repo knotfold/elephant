@@ -1,5 +1,6 @@
 import 'package:elephant/shared/colors.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/widgets.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 //this is the theme of the app and im not gonna comment this for now
@@ -18,7 +19,20 @@ class GalleryThemeData {
   static ThemeData themeData(ColorScheme colorScheme, Color focusColor) {
     return ThemeData(
       colorScheme: colorScheme,
-      textTheme: _textTheme,
+      textTheme: _textTheme.copyWith(
+        headline2: TextStyle(
+            color: colorScheme.brightness == Brightness.dark
+                ? darkFillColor
+                : lightFillColor),
+        headline3: TextStyle(
+            color: colorScheme.brightness == Brightness.dark
+                ? darkFillColor
+                : lightFillColor),
+        headline4: TextStyle(
+            color: colorScheme.brightness == Brightness.dark
+                ? darkFillColor
+                : lightFillColor),
+      ),
       // Matches manifest.json colors and background color.
       primaryColor: const Color(0xFF030303),
       appBarTheme: const AppBarTheme(
@@ -135,6 +149,7 @@ class GalleryThemeData {
     primary: Color(0xFFfafafa),
     primaryVariant: Color(0xFFc7c7c7),
     secondary: Color(0xFFfcd734),
+    tertiary: Color(0xFFc5a600),
     secondaryVariant: Color(0xFFc5a600),
     // background: Color(0xFFE6EBEB),
     background: primary,
@@ -241,17 +256,28 @@ class GalleryThemeData {
   static const _bold = FontWeight.w700;
 
   static final TextTheme _textTheme = TextTheme(
-    headline4: GoogleFonts.lato(
+    headline4: GoogleFonts.montserrat(
       fontWeight: _bold,
-      fontSize: 20.0,
+      fontSize: 16.0,
     ),
-    headline3: GoogleFonts.montserrat(fontWeight: _regular, fontSize: 24.0),
+    //this roboto fontstyle is amazing, using letter spacing and the right fontweight does help
+    headline1: GoogleFonts.roboto(
+      fontWeight: FontWeight.w300,
+      fontSize: 84.0,
+      letterSpacing: -3.5,
+    ),
+    headline2: GoogleFonts.roboto(
+        fontWeight: FontWeight.w200, fontSize: 64.0, letterSpacing: -1.5),
+    headline3:
+        GoogleFonts.montserrat(fontWeight: FontWeight.w200, fontSize: 20.0),
+
     caption: GoogleFonts.oswald(fontWeight: _semiBold, fontSize: 16.0),
     headline5: GoogleFonts.oswald(fontWeight: _medium, fontSize: 17.0),
     subtitle1: GoogleFonts.montserrat(fontWeight: _medium, fontSize: 16.0),
     overline: GoogleFonts.montserrat(fontWeight: _medium, fontSize: 12.0),
     bodyText1: GoogleFonts.montserrat(fontWeight: _regular, fontSize: 14.0),
-    subtitle2: GoogleFonts.titilliumWeb(fontWeight: _medium, fontSize: 14.0),
+    subtitle2: GoogleFonts.montserrat(
+        fontWeight: _regular, fontSize: 12.0, fontStyle: FontStyle.italic),
     bodyText2: GoogleFonts.montserrat(fontWeight: _regular, fontSize: 16.0),
     headline6: GoogleFonts.montserrat(fontWeight: _bold, fontSize: 16.0),
     button: GoogleFonts.montserrat(fontWeight: _semiBold, fontSize: 14.0),

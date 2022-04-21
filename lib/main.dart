@@ -1,6 +1,8 @@
 import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:elephant/pages/difficult_terms.dart';
 import 'package:elephant/pages/exam_results.dart';
+import 'package:elephant/pages/glossary_info_page.dart';
+import 'package:elephant/pages/library_page.dart';
 import 'package:elephant/pages/pages.dart';
 import 'package:elephant/pages/theme_chooser_page.dart';
 import 'package:firebase_core/firebase_core.dart';
@@ -68,6 +70,8 @@ class MyApp extends StatelessWidget {
         '/examSettingsPage': (context) => const ExamSettingsPage(),
         '/loginPage': (context) => const LoginPage(),
         '/registerPage': (context) => RegisterPage(),
+        '/libraryPage': (context) => const LibraryPage(),
+        '/glossaryInfoPage': (context) => const GlossaryInfoPage()
       },
     );
   }

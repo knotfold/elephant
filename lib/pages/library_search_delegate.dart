@@ -1,3 +1,4 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:elephant/services/services.dart';
 import 'package:elephant/shared/colors.dart';
 import 'package:elephant/shared/widgets.dart';
@@ -10,7 +11,7 @@ import 'package:provider/provider.dart';
 /*this class in search on displaying a searchpage using the custom search delegate that flutter offers
 and searchs through the unfiltered term list to find a term by matching the written input with the term term
 if there happens to be none then lets the user know and offers the users a quick shortcut to add the new term*/
-class CustomSearchDelegate extends SearchDelegate {
+class LibrarySearchDelegate extends SearchDelegate {
   @override
   /*the actions are displayed on the appbar, and for this widget we have a button to copy the
   current user input to the clipboard and another one to clear the query */
@@ -26,13 +27,17 @@ class CustomSearchDelegate extends SearchDelegate {
         },
         icon: const Icon(Icons.copy),
       ),
+      IconButton(
+        onPressed: () {},
+        icon: Icon(Icons.filter_list),
+      ),
       //erases the query
       IconButton(
-          onPressed: () {
-            query = '';
-            showResults(context);
-          },
-          icon: const Icon(Icons.cancel_outlined))
+        onPressed: () {
+          query = '';
+        },
+        icon: const Icon(Icons.cancel_outlined),
+      ),
     ];
   }
 
@@ -81,9 +86,120 @@ class CustomSearchDelegate extends SearchDelegate {
   Widget buildResults(BuildContext context) {
     Controller controller = Provider.of(context);
     double deviceHeigth = MediaQuery.of(context).size.height;
+    return StreamBuilder<QuerySnapshot>(
+      stream: FirebaseFirestore.instance
+          .collection('glossaries')
+          .where('nameSearch',
+              isGreaterThanOrEqualTo: query.toLowerCase().trim())
+          .where('nameSearch',
+              isLessThanOrEqualTo: query.toLowerCase().trim() + '~')
+          .snapshots(),
+      builder: (context, snapshot) {
+        if (snapshot.hasError) {
+          print(snapshot.error);
+          return const ErrorConnection();
+        }
+
+        //if it doesn't have data means that is loading
+        if (!snapshot.hasData) {
+          return const Center(
+            child: Padding(
+              padding: EdgeInsets.all(25.0),
+              child: CircularProgressIndicator(),
+            ),
+          );
+        }
+
+        if (snapshot.connectionState.name == ' waiting') {
+          return const Center(
+            child: Padding(
+              padding: EdgeInsets.all(25.0),
+              child: CircularProgressIndicator(),
+            ),
+          );
+        }
+        List<QueryDocumentSnapshot> queryDocuments = snapshot.data!.docs;
+        print(queryDocuments.length);
+        return SingleChildScrollView(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              const Text('Results'),
+              ListView.builder(
+                  physics: const NeverScrollableScrollPhysics(),
+                  shrinkWrap: true,
+                  itemCount: queryDocuments.length,
+                  itemBuilder: (context, index) {
+                    GlossaryModel glossaryModel =
+                        GlossaryModel.fromDocumentSnapshot(
+                      queryDocuments[index],
+                    );
+                    return Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        GlossaryCard(
+                          glossary: glossaryModel,
+                          route: '/glossaryInfoPage',
+                        ),
+                        Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          mainAxisAlignment: MainAxisAlignment.start,
+                          children: [
+                            const SizedBox(
+                              height: 10,
+                            ),
+                            Row(
+                              children: [
+                                const Icon(Icons.text_format_rounded),
+                                Text('Terms: ' +
+                                    glossaryModel.termsMapList.length
+                                        .toString()),
+                              ],
+                            ),
+                            const SizedBox(
+                              height: 5,
+                            ),
+                            Row(
+                              children: [
+                                const Icon(Icons.date_range),
+                                Text('Creation date: ' +
+                                    controller.timeStampToNormalDate(
+                                        glossaryModel.creationDate
+                                            .toDate()
+                                            .toString())),
+                              ],
+                            ),
+                            const SizedBox(
+                              height: 5,
+                            ),
+                            Row(
+                              children: [
+                                Icon(controller.mainCategoryIconChooser(
+                                    glossaryModel.mainCategoryEnum)),
+                                Text(controller.mainCategoryToString(
+                                    glossaryModel.mainCategory)),
+                              ],
+                            ),
+                          ],
+                        )
+                      ],
+                    );
+                  }),
+            ],
+          ),
+        );
+      },
+    );
 //if nothing is written then we display nothing
     if (query.isEmpty || query.trim() == '') {
-      return Container();
+      return Column(
+        children: [
+          const Text('Glossary library'),
+          ListView.builder(itemBuilder: (index, context) {
+            // return GlossaryCard(glossary: glossary);
+          })
+        ],
+      );
     }
 //once something is written on the input field we start applying logic to the code
     return Column(

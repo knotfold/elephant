@@ -1,8 +1,10 @@
+import 'dart:async';
 import 'dart:io';
 
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:elephant/services/services.dart';
 import 'package:elephant/shared/colors.dart';
+import 'package:elephant/shared/tags.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 
@@ -13,10 +15,13 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 enum ExamType { useTerms, useAnswers, mixed }
 
+enum LoginType { ios, google, facebook }
+
 class Controller with ChangeNotifier {
   //user model?
   UserModel user = UserModel(username: 'Kno');
-  late UserModel activeUser;
+  //the active user, which means it is the person using the app at this moment
+  UserModel activeUser = UserModel(username: '');
   //current glossary is used to handle the glossary that is currently being displayed in the
   //glossary page and it helps a lot to eddit, add or delete stuff from it
   late GlossaryModel _currentGlossary;
@@ -57,6 +62,8 @@ class Controller with ChangeNotifier {
   int realFixedExamLength = 0;
 
   //bool
+  //checks if there is a logged in user
+  bool activeSession = false;
   //this is not used anymore
   bool useFilteredTerms = false;
   //not used anymore lol
@@ -133,6 +140,55 @@ class Controller with ChangeNotifier {
 
   //functions
 
+  //finds the rating given by the user to a glossary
+  int ratingGivenByUser() {
+    int rating = 0;
+    if (currentGlossary.userRatings.isEmpty) {
+      return rating;
+    }
+    for (var rate in currentGlossary.userRatings) {
+      if (rate['user'] == activeUser.username) {
+        rating = rate['rating'];
+      }
+    }
+    return rating;
+  }
+
+  //function that registers a new user
+  Future<bool> registerUser(BuildContext context) async {
+    await FirebaseFirestore.instance
+        .collection('users')
+        .add(activeUser.toMap())
+        .catchError((onError) {
+      isLoading = false;
+
+      Navigator.of(context).pop();
+      Fluttertoast.showToast(
+          msg: 'Error registering your account, check your connection',
+          toastLength: Toast.LENGTH_LONG);
+    }).then((value) {
+      isLoading = false;
+      Timer(const Duration(seconds: 4), () {
+        //this just detects if this action has been execuded previously
+        Navigator.of(context).pop();
+        notifyListeners();
+        Navigator.of(context).pop();
+      });
+    }).timeout(
+      const Duration(seconds: 200),
+      onTimeout: () {
+        isLoading = false;
+
+        Navigator.of(context).pop();
+        Fluttertoast.showToast(
+            msg:
+                'Error registering your account, check your internet connection',
+            toastLength: Toast.LENGTH_LONG);
+      },
+    );
+    return true;
+  }
+
   //function that checks if the uid is registerted in the db
   Future<bool> login(User user, BuildContext context) async {
     var userDocs = await FirebaseFirestore.instance
@@ -141,13 +197,61 @@ class Controller with ChangeNotifier {
         .get();
     if (userDocs.docs.isEmpty) {
       print('new user needs to be registered');
+      activeUser = UserModel.userNotRegistered(user);
+
       Navigator.of(context).pushNamed('/registerPage');
     } else {
-      activeUser = UserModel.newUserLogin(user, userDocs.docs.first);
+      activeUser = UserModel.userRegistered(user, userDocs.docs.first);
+      notifyListeners();
       print('logging in');
+
       Navigator.of(context).pop();
     }
     return true;
+  }
+
+  //function to be used later that checks if there is an active session
+  Future<bool> activeSessionCheck() async {
+    User? user = FirebaseAuth.instance.currentUser;
+    if (user != null) {
+      await user.reload();
+      print('user is logged in');
+      var userDocs = await FirebaseFirestore.instance
+          .collection('users')
+          .where('uid', isEqualTo: user.uid)
+          .get();
+      //checks if the user has not been deleted for some wierd reason, and cancels the auto
+      //login process
+      if (userDocs.docs.isEmpty) {
+        FirebaseAuth.instance.signOut();
+        print('not logged in');
+        return false;
+      }
+      activeUser = UserModel.userRegistered(user, userDocs.docs.first);
+      activeUser.lastLoginTime = DateTime.now();
+      print('logging in');
+      activeSession = true;
+      return true;
+    } else {
+      activeSession = false;
+      print('not logged in');
+      return false;
+    }
+
+    // Future<SharedPreferences> _prefs = SharedPreferences.getInstance();
+    // final SharedPreferences prefs = await _prefs;
+    // if (prefs.getString('activeUid') == null) {
+    //   return false;
+    // } else {
+    //   return true;
+    // }
+  }
+
+  Future logout(BuildContext context) async {
+    await FirebaseAuth.instance.signOut();
+    activeUser = UserModel(username: '');
+    Navigator.of(context)
+        .pushNamedAndRemoveUntil('/loginPage', ModalRoute.withName('/'));
   }
 
   //function that checks if the ag is inside the select tags already to display its value
@@ -389,16 +493,65 @@ class Controller with ChangeNotifier {
     return termModel.type.replaceRange(0, 5, '').capitalize();
   }
 
+  //gets the maincategory of a glossary and puts is a string, it also removes the first 13 characters which are mainCategory.
+  String mainCategoryToString(String string) {
+    return string.replaceRange(0, 13, '').capitalize();
+  }
+
+  String timeStampToNormalDate(String string) {
+    return string.replaceRange(11, null, '');
+  }
+
+  //chooses an icon for the recieved maincategory and returns it so it can be displayed
+  IconData mainCategoryIconChooser(MainCategory category) {
+    IconData iconData = Icons.auto_stories;
+    switch (category) {
+      case MainCategory.language:
+        iconData = Icons.translate;
+        break;
+      case MainCategory.science:
+        iconData = Icons.science;
+        break;
+      case MainCategory.mathematics:
+        iconData = Icons.plus_one;
+        break;
+      case MainCategory.history:
+        iconData = Icons.history_edu;
+        break;
+      case MainCategory.geography:
+        iconData = Icons.map_outlined;
+        break;
+      case MainCategory.biology:
+        iconData = Icons.pets;
+        break;
+      case MainCategory.generalKnowledge:
+        iconData = Icons.auto_stories;
+        break;
+      case MainCategory.economy:
+        break;
+      case MainCategory.art:
+        iconData = Icons.photo;
+        break;
+      case MainCategory.other:
+        iconData = Icons.auto_stories;
+
+        break;
+      default:
+        iconData = Icons.auto_stories;
+        break;
+    }
+
+    return iconData;
+  }
+
   set currentGlossary(GlossaryModel currentGlossary) {
     _currentGlossary = currentGlossary;
   }
 
-  //function to be used later that checks if there is an active session
-  loginCheck() {}
-
   //function in charge of intializing the user data, it still needs to be re programmed later
-  initilizedUserData() async {
+  initilizedUserData(BuildContext context) async {
     await assignTheme();
+    await activeSessionCheck();
     userDataInitialized = true;
     notifyListeners();
   }
